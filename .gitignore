@@ -1,0 +1,11 @@
+# Segredos (chaves do Supabase, senhas iniciais) — NUNCA vão para o GitHub
+.streamlit/secrets.toml
+
+# Ambiente virtual do Python (Windows) e caches
+.venv/
+__pycache__/
+*.pyc
+
+# Backups locais gerados pelo app / pela convenção
+app_backup_*.py
+acoes_backup_*.csv

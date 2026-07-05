@@ -1,0 +1,261 @@
+# -*- coding: utf-8 -*-
+"""
+Login, sessão e gestão de usuários do Calendário.
+
+Papéis:
+  • admin  -> faz tudo + gerencia usuários (Hudson e Reginaldo)
+  • editor -> edita o calendário (adicionar/editar/excluir), sem mexer em usuários
+  • leitor -> só vê o calendário e baixa o Excel
+
+Fluxo de cadastro: a pessoa clica em "Criar conta" no login -> a conta entra como
+'pendente' -> um admin aprova em "Gerenciar Usuários" (definindo o papel).
+
+Senhas ficam guardadas com bcrypt (embaralhadas), nunca em texto puro.
+"""
+import secrets as _secrets
+
+import bcrypt
+import streamlit as st
+
+import db
+
+PAPEIS = ["admin", "editor", "leitor"]
+
+
+# ---------------------------------------------------------------------------
+# Senhas (bcrypt)
+# ---------------------------------------------------------------------------
+def _hash(senha: str) -> str:
+    return bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def _confere(senha: str, senha_hash: str) -> bool:
+    try:
+        return bcrypt.checkpw(senha.encode("utf-8"), (senha_hash or "").encode("utf-8"))
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Bootstrap: cria os admins iniciais a partir dos secrets (só se não existirem)
+# ---------------------------------------------------------------------------
+def inicializar() -> None:
+    """Na 1ª vez, cria as contas de admin definidas nos secrets ([[admin_inicial]]).
+    Se a conta já existe, NÃO mexe (para não sobrescrever senha trocada depois)."""
+    if st.session_state.get("_admins_ok"):
+        return
+    try:
+        admins = st.secrets.get("admin_inicial", [])
+    except Exception:
+        admins = []
+    for a in admins:
+        try:
+            if not db.buscar_usuario(a["usuario"]):
+                db.criar_usuario(
+                    a["usuario"], a.get("nome", ""), _hash(a["senha"]),
+                    papel="admin", status="ativo",
+                )
+        except Exception:
+            pass  # se o banco estiver indisponível, segue (a tela de erro aparece no login)
+    st.session_state["_admins_ok"] = True
+
+
+# ---------------------------------------------------------------------------
+# Sessão
+# ---------------------------------------------------------------------------
+def esta_logado() -> bool:
+    return bool(st.session_state.get("auth_user"))
+
+
+def usuario_atual():
+    return st.session_state.get("auth_user")
+
+
+def sair() -> None:
+    st.session_state.pop("auth_user", None)
+    st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Tela de login (visual parecido com a tela Natura)
+# ---------------------------------------------------------------------------
+def _css_login() -> None:
+    st.markdown(
+        """
+        <style>
+          /* Cartão central do login */
+          .st-key-login_card {
+            background: #FFFFFF;
+            border: 1px solid #ECECEC;
+            border-radius: 16px;
+            padding: 1.6rem 1.8rem 1.2rem;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.10);
+            margin-top: 6vh;
+          }
+          .login-logo   { text-align:center; font-size:1.7rem; font-weight:800;
+                           color:#EE7B30; margin: 0 0 .2rem; letter-spacing:.5px; }
+          .login-titulo { text-align:center; font-size:1.35rem; font-weight:800;
+                          color:#1A1A2E; margin:.1rem 0 .1rem; }
+          .login-sub    { text-align:center; color:#7A7A85; margin:0 0 1rem; }
+          /* Botão principal (Entrar / Solicitar acesso) em laranja Natura */
+          .st-key-login_card [data-testid="stFormSubmitButton"] button {
+            background:#EE7B30 !important; border:0 !important; color:#fff !important;
+            font-weight:700 !important;
+          }
+          .st-key-login_card [data-testid="stFormSubmitButton"] button:hover {
+            background:#D96C22 !important;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def tela_login() -> None:
+    _css_login()
+    _, meio, _ = st.columns([1, 1.5, 1])
+    with meio:
+        with st.container(key="login_card"):
+            st.markdown("<div class='login-logo'>🌸 natura</div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='login-titulo'>Calendário da Grade Comercial</div>",
+                unsafe_allow_html=True,
+            )
+            if st.session_state.get("_modo_cadastro"):
+                _form_cadastro()
+            else:
+                _form_login()
+
+
+def _form_login() -> None:
+    st.markdown("<div class='login-sub'>Entre na sua conta</div>", unsafe_allow_html=True)
+    with st.form("login_form"):
+        usuario = st.text_input("Usuário")
+        senha = st.text_input("Senha", type="password")
+        entrar = st.form_submit_button("Entrar", use_container_width=True)
+
+    if entrar:
+        u = db.buscar_usuario(usuario)
+        if not u or not _confere(senha, u.get("senha_hash", "")):
+            st.error("Usuário ou senha incorretos.")
+        elif u.get("status") == "pendente":
+            st.warning("Seu cadastro ainda não foi aprovado por um administrador. ⏳")
+        elif u.get("status") == "revogado":
+            st.error("Seu acesso foi revogado. Fale com um administrador.")
+        else:
+            st.session_state.auth_user = {
+                "id": u["id"], "usuario": u["usuario"],
+                "nome": u.get("nome", ""), "papel": u.get("papel", "leitor"),
+            }
+            st.rerun()
+
+    if st.button("Criar conta", key="ir_cadastro"):
+        st.session_state._modo_cadastro = True
+        st.rerun()
+    st.caption("Esqueceu a senha? Peça a um administrador para redefinir. 🙂")
+
+
+def _form_cadastro() -> None:
+    st.markdown(
+        "<div class='login-sub'>Criar uma conta nova</div>", unsafe_allow_html=True
+    )
+    with st.form("cadastro_form"):
+        nome = st.text_input("Nome completo")
+        usuario = st.text_input("Usuário (para entrar)")
+        senha = st.text_input("Senha", type="password")
+        senha2 = st.text_input("Repita a senha", type="password")
+        enviar = st.form_submit_button("Solicitar acesso", use_container_width=True)
+
+    if enviar:
+        if not (nome.strip() and usuario.strip() and senha):
+            st.error("Preencha todos os campos.")
+        elif len(senha) < 4:
+            st.error("A senha precisa ter pelo menos 4 caracteres.")
+        elif senha != senha2:
+            st.error("As duas senhas não são iguais.")
+        elif db.buscar_usuario(usuario):
+            st.error("Já existe alguém com esse usuário. Escolha outro.")
+        else:
+            db.criar_usuario(usuario.strip(), nome.strip(), _hash(senha),
+                             papel="leitor", status="pendente")
+            st.success(
+                "Cadastro enviado! Assim que um administrador aprovar, você já entra. ✅"
+            )
+
+    if st.button("← Voltar ao login", key="voltar_login"):
+        st.session_state._modo_cadastro = False
+        st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Tela "Gerenciar Usuários" (só admin)
+# ---------------------------------------------------------------------------
+@st.dialog("👥 Gerenciar Usuários", width="large")
+def dialog_gerenciar_usuarios() -> None:
+    st.caption("Aprove cadastros, defina papéis, revogue acessos e resete senhas.")
+
+    eu = usuario_atual() or {}
+    usuarios = db.listar_usuarios()
+    # Pendentes primeiro (para o admin ver quem está esperando aprovação).
+    ordem_status = {"pendente": 0, "ativo": 1, "revogado": 2}
+    usuarios.sort(key=lambda u: (ordem_status.get(u.get("status"), 9), u.get("id", 0)))
+
+    if not usuarios:
+        st.info("Ainda não há usuários cadastrados.")
+        return
+
+    # Senha temporária recém-gerada (mostrada uma vez após "Resetar senha").
+    _nova = st.session_state.pop("_senha_temp", None)
+    if _nova:
+        st.success(
+            f"Senha redefinida para **{_nova[0]}**. Anote e repasse: `{_nova[1]}`"
+        )
+
+    _BADGE = {
+        "pendente": "🟡 PENDENTE", "ativo": "🟢 ATIVO", "revogado": "🔴 REVOGADO",
+    }
+
+    for u in usuarios:
+        uid, status = u["id"], u.get("status", "")
+        sou_eu = uid == eu.get("id")
+        st.divider()
+        c_info, c_papel, c_status, c_acoes = st.columns([2.5, 2, 1.6, 3])
+        with c_info:
+            st.markdown(f"**{u.get('usuario','')}**")
+            st.caption(u.get("nome", "") or "—")
+        with c_papel:
+            papel_sel = st.selectbox(
+                "Papel", PAPEIS,
+                index=PAPEIS.index(u["papel"]) if u.get("papel") in PAPEIS else 2,
+                key=f"papel_{uid}", label_visibility="collapsed",
+            )
+        with c_status:
+            st.write(_BADGE.get(status, status))
+        with c_acoes:
+            b1, b2 = st.columns(2)
+            # Aprovar (pendente) / Salvar papel (ativo) / Reativar (revogado)
+            if status == "pendente":
+                if b1.button("✅ Aprovar", key=f"aprovar_{uid}", use_container_width=True):
+                    db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
+                    st.rerun()
+            elif status == "ativo":
+                if b1.button("💾 Papel", key=f"papel_btn_{uid}", use_container_width=True):
+                    db.atualizar_usuario(uid, {"papel": papel_sel})
+                    st.rerun()
+            elif status == "revogado":
+                if b1.button("♻️ Reativar", key=f"reativar_{uid}", use_container_width=True):
+                    db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
+                    st.rerun()
+
+            # Revogar (não deixa revogar a própria conta, p/ não se trancar de fora)
+            if status != "revogado" and not sou_eu:
+                if b2.button("🚫 Revogar", key=f"revogar_{uid}", use_container_width=True):
+                    db.atualizar_usuario(uid, {"status": "revogado"})
+                    st.rerun()
+
+            # Resetar senha: gera uma temporária e mostra uma vez.
+            if st.button("🔑 Resetar senha", key=f"reset_{uid}", use_container_width=True):
+                temp = _secrets.token_urlsafe(6)
+                db.atualizar_usuario(uid, {"senha_hash": _hash(temp)})
+                st.session_state["_senha_temp"] = (u.get("usuario", ""), temp)
+                st.rerun()

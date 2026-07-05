@@ -1,0 +1,75 @@
+📅 CALENDÁRIO DE AÇÕES E PROMOÇÕES
+==================================
+
+Um calendário visual (linha do tempo) das ações comerciais do mês, em faixas
+coloridas — parecido com a "Grade Comercial" do Excel.
+
+
+COMO ABRIR (passo a passo)
+--------------------------
+1) Só na PRIMEIRA vez: instale o Python.
+   - Baixe em: https://www.python.org/downloads/
+   - Na instalação, MARQUE a caixinha "Add Python to PATH" e clique em "Install Now".
+
+2) Dê dois cliques no arquivo  iniciar.bat
+   - Na primeira vez ele instala tudo sozinho (demora 1-2 min).
+   - Depois abre o calendário no seu navegador automaticamente
+     (no endereço http://localhost:8501).
+
+3) Pronto! Use a tela (veja abaixo).
+
+
+USANDO A TELA
+-------------
+• ADICIONAR NOVA AÇÃO (formulário no topo):
+   - Nome da ação, Faixa, Início, Fim, Cor e Detalhes.
+   - "Faixa" é a linha/seção na esquerda do calendário (como a coluna A da
+     planilha: PRESENTES, PROGRESSIVO, Oferta Relâmpago, etc.).
+   - Não achou a faixa na lista? Digite o nome em "...ou digite uma faixa nova".
+   - "Ajustar tom" deixa você escolher a cor exata, se quiser.
+   - Ao salvar, a ação vira um bloco colorido no período certo.
+
+• O CALENDÁRIO:
+   - Os dias ficam no TOPO e mostram só o mês que tem ações (ex.: 01/06 a 30/06).
+   - Cada faixa fica numa linha na esquerda. Se duas ações da MESMA faixa se
+     sobrepõem no tempo, elas aparecem empilhadas em sub-linhas (nenhuma some).
+   - Use "Mostrar período" para ver o mês todo ou semana a semana.
+
+• EDITAR OU EXCLUIR AÇÕES (tabela mais abaixo):
+   - Mude qualquer célula direto na tabela.
+   - Para EXCLUIR: marque a linha (quadradinho à esquerda) e aperte Delete.
+   - Sempre clique em "Salvar alterações" depois de editar/excluir.
+
+• LIMPAR CALENDÁRIO (apaga tudo):
+   - Lá embaixo, na seção "🗑️ Limpar calendário".
+   - Pede confirmação e, antes de apagar, salva um backup automático
+     (arquivo acoes_backup_DATA_HORA.csv) — dá pra recuperar depois.
+
+
+ONDE FICAM OS DADOS
+-------------------
+- Tudo é salvo no arquivo  acoes.csv  (nesta mesma pasta).
+- Você pode abrir o acoes.csv no Excel também.
+- O botão "Baixar Excel" gera uma cópia em planilha (.xlsx) quando quiser.
+- Cópias de segurança ficam como  acoes_backup*.csv  na mesma pasta.
+
+IMPORTANTE: o app usa o arquivo acoes.csv local. Ele NÃO está conectado à
+planilha do Google nem ao Excel — esses servem só para importar dados.
+
+
+PARA FECHAR
+-----------
+- Feche a janela preta (o "terminal") que abriu junto, ou aperte Ctrl+C nela.
+
+
+DÚVIDAS COMUNS
+--------------
+- "Python não encontrado": você pulou o passo 1, ou esqueceu de marcar
+  "Add Python to PATH". Reinstale o Python marcando essa opção.
+
+- Dias da semana aparecem estranhos ("Você", "Nós")? Era o tradutor automático
+  do navegador. O app já desliga isso sozinho — se acontecer, recarregue a página.
+
+- Quer mudar as faixas/cores sugeridas? Elas ficam no topo do arquivo app.py
+  (listas CATEGORIAS_PADRAO e CORES_SUGERIDAS). Mas você também pode digitar
+  faixas novas direto na tela.
