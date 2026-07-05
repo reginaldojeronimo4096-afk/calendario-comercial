@@ -9,3 +9,8 @@ __pycache__/
 # Backups locais gerados pelo app / pela convenção
 app_backup_*.py
 acoes_backup_*.csv
+
+# Dados de negócio ficam SÓ no Supabase — não vão para o repositório (público)
+acoes.csv
+ciclos.csv
+supabase_setup.sql
