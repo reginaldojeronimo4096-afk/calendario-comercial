@@ -12,6 +12,8 @@ Fluxo de cadastro: a pessoa clica em "Criar conta" no login -> a conta entra com
 
 Senhas ficam guardadas com bcrypt (embaralhadas), nunca em texto puro.
 """
+import base64
+import os
 import secrets as _secrets
 
 import bcrypt
@@ -97,6 +99,12 @@ def _css_login() -> None:
           .login-titulo { text-align:center; font-size:1.35rem; font-weight:800;
                           color:#1A1A2E; margin:.1rem 0 .1rem; }
           .login-sub    { text-align:center; color:#7A7A85; margin:0 0 1rem; }
+          /* Rótulos "Usuário"/"Senha" legíveis no cartão branco (mesmo no tema
+             escuro, onde por padrão ficariam cinza-claro e sumiam). */
+          .st-key-login_card label,
+          .st-key-login_card [data-testid="stWidgetLabel"] * {
+            color:#3A3A3A !important; font-weight:600 !important;
+          }
           /* Botão principal (Entrar / Solicitar acesso) em laranja Natura */
           .st-key-login_card [data-testid="stFormSubmitButton"] button {
             background:#EE7B30 !important; border:0 !important; color:#fff !important;
@@ -111,12 +119,33 @@ def _css_login() -> None:
     )
 
 
+@st.cache_data
+def _logo_uri():
+    """Lê o natura_logo.png (na pasta do projeto) e devolve embutido como data-URI,
+    para o logo viajar dentro da própria página (sem depender de arquivo externo)."""
+    caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "natura_logo.png")
+    try:
+        with open(caminho, "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode("ascii")
+    except Exception:
+        return None
+
+
 def tela_login() -> None:
     _css_login()
     _, meio, _ = st.columns([1, 1.5, 1])
     with meio:
         with st.container(key="login_card"):
-            st.markdown("<div class='login-logo'>🌸 natura</div>", unsafe_allow_html=True)
+            _logo = _logo_uri()
+            if _logo:
+                st.markdown(
+                    f"<div style='text-align:center;margin:.2rem 0 .6rem;'>"
+                    f"<img src='{_logo}' alt='natura' "
+                    f"style='width:60%;max-width:210px;height:auto;'></div>",
+                    unsafe_allow_html=True,
+                )
+            else:  # se o arquivo faltar, cai no emoji (nunca quebra a tela)
+                st.markdown("<div class='login-logo'>🌸 natura</div>", unsafe_allow_html=True)
             st.markdown(
                 "<div class='login-titulo'>Calendário da Grade Comercial</div>",
                 unsafe_allow_html=True,
