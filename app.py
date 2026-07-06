@@ -1029,27 +1029,26 @@ fig_head.add_annotation(
 # simplesmente não se mexe quando você rola as faixas. O `scrollbar-gutter:
 # stable` reserva o MESMO espaço de barra de rolagem nos dois, para as colunas
 # de datas ficarem alinhadas com as barras das faixas.
-# O calendário PREENCHE a largura no computador (use_container_width), mas NUNCA
-# fica mais estreito que um mínimo legível: em telas estreitas (celular), em vez
-# de espremer, ele mantém esse mínimo e ROLA na horizontal (arrasta pro lado).
-# LARGURA_MIN = 120+10 de margem + ~30px por dia. Ajuste o "30" p/ colunas de dia
-# mais largas (número maior) ou mais estreitas (número menor) no celular.
-LARGURA_MIN = 130 + 30 * len(dias)
+# O calendário PREENCHE a largura no computador, mas NUNCA fica mais estreito que
+# um mínimo legível. O truque que funciona no Streamlit: o MÍNIMO vai no QUADRO
+# (não dentro do gráfico), e cabeçalho + faixas ficam dentro de UM ÚNICO envelope
+# que rola na horizontal — assim os dois rolam JUNTOS e continuam alinhados.
+# LARGURA_MIN = 120+10 de margem + ~36px por dia. Ajuste o "36" (px por dia).
+LARGURA_MIN = 130 + 36 * len(dias)
 
 st.markdown(
     f"""
     <style>
+      /* Envelope único que rola na horizontal (arrasta pro lado no celular). */
+      .st-key-cal_scroll {{ overflow-x: auto; }}
+      /* MÍNIMO legível no quadro: no PC ele cresce e preenche; no celular fica no
+         mínimo e o envelope acima rola. Cabeçalho e faixas têm o mesmo mínimo,
+         então ficam sempre alinhados. */
       .st-key-cal_head_box, .st-key-cal_box {{
+        min-width: {LARGURA_MIN}px;
         scrollbar-gutter: stable;               /* mesmo recuo de barra nos dois */
-        overflow-x: auto;                       /* rola na horizontal se não couber */
         border-left: 1px solid #ECECEC;
         border-right: 1px solid #ECECEC;
-      }}
-      /* Largura MÍNIMA do gráfico: no PC preenche tudo; no celular não espreme
-         abaixo disto — mantém e arrasta pro lado. */
-      .st-key-cal_head_box [data-testid="stPlotlyChart"],
-      .st-key-cal_box [data-testid="stPlotlyChart"] {{
-        min-width: {LARGURA_MIN}px;
       }}
       /* Cabeçalho (datas): min-height evita que ele encolha em telas baixas e
          corte a linha "SEMANA N" do topo. */
@@ -1072,33 +1071,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Mantém a rolagem horizontal do cabeçalho e das faixas SINCRONIZADAS: no celular,
-# arrastar um pro lado move o outro junto (datas seguem alinhadas com as barras).
-st.components.v1.html(
-    """
-    <script>
-    (function () {
-      function liga() {
-        try {
-          const doc = window.parent.document;
-          const head = doc.querySelector('.st-key-cal_head_box');
-          const body = doc.querySelector('.st-key-cal_box');
-          if (!head || !body || head.dataset.syncOn) return;
-          head.dataset.syncOn = body.dataset.syncOn = '1';
-          let lock = false;
-          const mirror = (a, b) => a.addEventListener('scroll', function () {
-            if (lock) return; lock = true; b.scrollLeft = a.scrollLeft; lock = false;
-          });
-          mirror(head, body); mirror(body, head);
-        } catch (e) {}
-      }
-      setInterval(liga, 400); liga();
-    })();
-    </script>
-    """,
-    height=0,
-)
-
 _cfg_cal = {
     "displayModeBar": False,      # esconde a barra de ferramentas (canto sup. dir.)
     "scrollZoom": False,          # sem zoom pela rolagem do mouse
@@ -1106,15 +1078,18 @@ _cfg_cal = {
     "showAxisDragHandles": False, # sem alças de arraste nos eixos
     "displaylogo": False,
 }
-# Cabeçalho num quadro próprio (fica parado); faixas num quadro rolável embaixo.
-with st.container(key="cal_head_box"):
-    st.plotly_chart(
-        fig_head, use_container_width=True, config=_cfg_cal, key="grafico_cabecalho",
-    )
-with st.container(key="cal_box"):
-    st.plotly_chart(
-        fig, use_container_width=True, config=_cfg_cal, key="grafico_corpo",
-    )
+# Um ÚNICO envelope rolável na horizontal, com o cabeçalho em cima e as faixas
+# embaixo — os dois com o MESMO piso de largura, então sempre alinhados ao rolar.
+with st.container(key="cal_scroll"):
+    with st.container(key="cal_head_box"):
+        st.plotly_chart(
+            fig_head, use_container_width=True, config=_cfg_cal,
+            key="grafico_cabecalho",
+        )
+    with st.container(key="cal_box"):
+        st.plotly_chart(
+            fig, use_container_width=True, config=_cfg_cal, key="grafico_corpo",
+        )
 
 
 # ----------------------------------------------------------------------------
