@@ -92,7 +92,8 @@ def _css_login() -> None:
             border-radius: 16px;
             padding: 1.6rem 1.8rem 1.2rem;
             box-shadow: 0 18px 40px rgba(0,0,0,0.10);
-            margin-top: 6vh;
+            max-width: 380px;          /* limita a largura do cartão */
+            margin: 6vh auto 0;        /* e centraliza na tela */
           }
           .login-logo   { text-align:center; font-size:1.7rem; font-weight:800;
                            color:#EE7B30; margin: 0 0 .2rem; letter-spacing:.5px; }
@@ -133,27 +134,25 @@ def _logo_uri():
 
 def tela_login() -> None:
     _css_login()
-    _, meio, _ = st.columns([1, 1.5, 1])
-    with meio:
-        with st.container(key="login_card"):
-            _logo = _logo_uri()
-            if _logo:
-                st.markdown(
-                    f"<div style='text-align:center;margin:.2rem 0 .6rem;'>"
-                    f"<img src='{_logo}' alt='natura' "
-                    f"style='width:60%;max-width:210px;height:auto;'></div>",
-                    unsafe_allow_html=True,
-                )
-            else:  # se o arquivo faltar, cai no emoji (nunca quebra a tela)
-                st.markdown("<div class='login-logo'>🌸 natura</div>", unsafe_allow_html=True)
+    with st.container(key="login_card"):
+        _logo = _logo_uri()
+        if _logo:
             st.markdown(
-                "<div class='login-titulo'>Calendário da Grade Comercial</div>",
+                f"<div style='text-align:center;margin:.2rem 0 .6rem;'>"
+                f"<img src='{_logo}' alt='natura' "
+                f"style='width:60%;max-width:210px;height:auto;'></div>",
                 unsafe_allow_html=True,
             )
-            if st.session_state.get("_modo_cadastro"):
-                _form_cadastro()
-            else:
-                _form_login()
+        else:  # se o arquivo faltar, cai no emoji (nunca quebra a tela)
+            st.markdown("<div class='login-logo'>🌸 natura</div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='login-titulo'>Calendário da Grade Comercial</div>",
+            unsafe_allow_html=True,
+        )
+        if st.session_state.get("_modo_cadastro"):
+            _form_cadastro()
+        else:
+            _form_login()
 
 
 def _form_login() -> None:
@@ -188,11 +187,21 @@ def _form_cadastro() -> None:
     st.markdown(
         "<div class='login-sub'>Criar uma conta nova</div>", unsafe_allow_html=True
     )
+    # Mensagem de sucesso que sobrevive ao recarregamento (aparece após limpar).
+    if st.session_state.get("_cad_flash"):
+        st.success(st.session_state.pop("_cad_flash"))
+
+    # Nonce nas chaves dos campos: ao cadastrar com SUCESSO, incrementamos o nonce
+    # -> na próxima renderização os campos são widgets NOVOS (vazios). Em caso de
+    # erro, o nonce não muda e os campos mantêm o que foi digitado (sem reescrever).
+    st.session_state.setdefault("_cad_nonce", 0)
+    _n = st.session_state._cad_nonce
+
     with st.form("cadastro_form"):
-        nome = st.text_input("Nome completo")
-        usuario = st.text_input("Usuário (para entrar)")
-        senha = st.text_input("Senha", type="password")
-        senha2 = st.text_input("Repita a senha", type="password")
+        nome = st.text_input("Nome completo", key=f"cad_nome_{_n}")
+        usuario = st.text_input("Usuário (para entrar)", key=f"cad_user_{_n}")
+        senha = st.text_input("Senha", type="password", key=f"cad_senha_{_n}")
+        senha2 = st.text_input("Repita a senha", type="password", key=f"cad_senha2_{_n}")
         enviar = st.form_submit_button("Solicitar acesso", use_container_width=True)
 
     if enviar:
@@ -207,9 +216,11 @@ def _form_cadastro() -> None:
         else:
             db.criar_usuario(usuario.strip(), nome.strip(), _hash(senha),
                              papel="leitor", status="pendente")
-            st.success(
+            st.session_state._cad_nonce += 1   # limpa os campos na próxima tela
+            st.session_state._cad_flash = (
                 "Cadastro enviado! Assim que um administrador aprovar, você já entra. ✅"
             )
+            st.rerun()
 
     if st.button("← Voltar ao login", key="voltar_login"):
         st.session_state._modo_cadastro = False

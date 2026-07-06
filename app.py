@@ -275,7 +275,7 @@ def _data_iso(v):
         return v[:10] if v.strip() else None
     try:
         return v.isoformat()[:10]  # date/Timestamp -> 'AAAA-MM-DD' (sem a hora)
-    except AttributeError:
+    except (AttributeError, TypeError, ValueError):
         return None
 
 
@@ -304,16 +304,19 @@ def carregar() -> pd.DataFrame:
 
 
 def salvar(df: pd.DataFrame) -> None:
+    # to_dict("records") converte para dicts Python simples (valores nativos),
+    # evitando peculiaridades do acesso linha-a-linha do pandas (que davam
+    # TypeError ao juntar a ação nova, no Python novo da hospedagem).
     registros = [
         {
-            "acao": _texto(r.get("Ação")),
-            "categoria": _texto(r.get("Categoria")),
-            "inicio": _data_iso(r.get("Início")),
-            "fim": _data_iso(r.get("Fim")),
-            "cor": _texto(r.get("Cor")),
-            "detalhes": _texto(r.get("Detalhes")),
+            "acao": _texto(rec.get("Ação")),
+            "categoria": _texto(rec.get("Categoria")),
+            "inicio": _data_iso(rec.get("Início")),
+            "fim": _data_iso(rec.get("Fim")),
+            "cor": _texto(rec.get("Cor")),
+            "detalhes": _texto(rec.get("Detalhes")),
         }
-        for _, r in df.iterrows()
+        for rec in df.to_dict(orient="records")
     ]
     db.substituir_acoes(registros)
 
@@ -335,11 +338,11 @@ def carregar_ciclos() -> pd.DataFrame:
 def salvar_ciclos(df: pd.DataFrame) -> None:
     registros = [
         {
-            "ciclo": _texto(r.get("Ciclo")),
-            "inicio": _data_iso(r.get("Início")),
-            "fim": _data_iso(r.get("Fim")),
+            "ciclo": _texto(rec.get("Ciclo")),
+            "inicio": _data_iso(rec.get("Início")),
+            "fim": _data_iso(rec.get("Fim")),
         }
-        for _, r in df.iterrows()
+        for rec in df.to_dict(orient="records")
     ]
     db.substituir_ciclos(registros)
 
