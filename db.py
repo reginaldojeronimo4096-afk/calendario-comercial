@@ -9,6 +9,8 @@ chave tem acesso total e ignora o RLS (a trava de segurança do banco).
 Se um dia quiser trocar o banco de lugar, é só mexer AQUI: o resto do app chama
 só estas funções.
 """
+from datetime import datetime, timezone
+
 import streamlit as st
 from supabase import create_client, Client
 
@@ -88,3 +90,41 @@ def criar_usuario(usuario, nome, senha_hash, papel="leitor", status="pendente") 
 
 def atualizar_usuario(usuario_id, campos: dict) -> None:
     _cliente().table("usuarios").update(campos).eq("id", usuario_id).execute()
+
+
+# ---------------------------------------------------------------------------
+# Grade de Ativação (promoções + produtos)
+# ---------------------------------------------------------------------------
+def grade_listar_listas() -> list:
+    r = _cliente().table("grade_listas").select("*").order("tipo").execute()
+    return r.data or []
+
+
+def grade_upsert_lista(lista: dict) -> None:
+    """Cria/atualiza a promoção pela chave 'lista_nome' (substitui ao subir grade
+    nova). Listas que não vierem no arquivo NÃO são tocadas (viram histórico)."""
+    dados = dict(lista)
+    dados["atualizado_em"] = datetime.now(timezone.utc).isoformat()
+    _cliente().table("grade_listas").upsert(dados, on_conflict="lista_nome").execute()
+
+
+def grade_substituir_produtos(lista_nome: str, produtos: list) -> None:
+    """Troca TODOS os produtos daquela promoção pelos novos (apaga e reinsere)."""
+    c = _cliente()
+    c.table("grade_produtos").delete().eq("lista_nome", lista_nome).execute()
+    for i in range(0, len(produtos), 500):        # insere em lotes de 500
+        lote = produtos[i:i + 500]
+        if lote:
+            c.table("grade_produtos").insert(lote).execute()
+
+
+def grade_listar_produtos(lista_nome: str) -> list:
+    r = (
+        _cliente()
+        .table("grade_produtos")
+        .select("*")
+        .eq("lista_nome", lista_nome)
+        .order("id")
+        .execute()
+    )
+    return r.data or []

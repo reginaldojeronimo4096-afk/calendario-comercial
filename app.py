@@ -19,6 +19,7 @@ from openpyxl.utils import get_column_letter
 
 import auth
 import db
+import grade
 
 # ----------------------------------------------------------------------------
 # Configuração e constantes
@@ -172,12 +173,24 @@ PAPEL = _U["papel"]
 PODE_EDITAR = PAPEL in ("admin", "editor")   # admin/editor mexem no calendário
 EH_ADMIN = PAPEL == "admin"                  # só admin gerencia usuários
 
-# Barra lateral: quem está logado + botão de sair.
+# Barra lateral: quem está logado + Promoções + botão de sair.
 with st.sidebar:
     st.markdown(f"### 👤 {_U.get('nome') or _U['usuario']}")
     st.caption(f"Papel: **{PAPEL}**")
     if st.button("🚪 Sair", use_container_width=True):
         auth.sair()
+    st.divider()
+    # Abre a tela de consulta das promoções (Grade de Ativação) — para todos.
+    if st.button("📑 Promoções", use_container_width=True):
+        st.session_state["_view"] = "promocoes"
+        st.session_state.pop("_grade_sel", None)
+        st.rerun()
+
+# Se estiver no modo "Promoções", mostra essa página e PARA (não desenha o
+# calendário). O botão "Voltar ao calendário" limpa o _view e volta ao normal.
+if st.session_state.get("_view") == "promocoes":
+    grade.pagina_promocoes(EH_ADMIN)
+    st.stop()
 
 
 # ----------------------------------------------------------------------------
