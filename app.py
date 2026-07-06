@@ -1029,42 +1029,41 @@ fig_head.add_annotation(
 # simplesmente não se mexe quando você rola as faixas. O `scrollbar-gutter:
 # stable` reserva o MESMO espaço de barra de rolagem nos dois, para as colunas
 # de datas ficarem alinhadas com as barras das faixas.
-# Largura FIXA do calendário: em vez de esticar/espremer conforme a tela (que no
-# celular em pé virava um borrão ilegível), o calendário mantém uma largura
-# legível e, em telas estreitas, ROLA na horizontal (arrasta pro lado). Conta:
-# 120+10 de margem + ~38px por dia. Ajuste o "38" se quiser as colunas de dias
-# mais largas (número maior) ou mais estreitas (número menor).
-LARGURA_CAL = 130 + 38 * len(dias)
-fig.update_layout(width=LARGURA_CAL)
-fig_head.update_layout(width=LARGURA_CAL)
+# O calendário PREENCHE a largura no computador (use_container_width), mas NUNCA
+# fica mais estreito que um mínimo legível: em telas estreitas (celular), em vez
+# de espremer, ele mantém esse mínimo e ROLA na horizontal (arrasta pro lado).
+# LARGURA_MIN = 120+10 de margem + ~30px por dia. Ajuste o "30" p/ colunas de dia
+# mais largas (número maior) ou mais estreitas (número menor) no celular.
+LARGURA_MIN = 130 + 30 * len(dias)
 
 st.markdown(
     f"""
     <style>
-      /* Envelope que ROLA na horizontal: cabeçalho + faixas rolam JUNTOS (assim
-         as datas continuam alinhadas com as barras ao arrastar pro lado). */
-      .st-key-cal_scroll {{ overflow-x: auto; }}
       .st-key-cal_head_box, .st-key-cal_box {{
-        width: {LARGURA_CAL}px;                 /* mesma largura do gráfico */
         scrollbar-gutter: stable;               /* mesmo recuo de barra nos dois */
+        overflow-x: auto;                       /* rola na horizontal se não couber */
         border-left: 1px solid #ECECEC;
         border-right: 1px solid #ECECEC;
+      }}
+      /* Largura MÍNIMA do gráfico: no PC preenche tudo; no celular não espreme
+         abaixo disto — mantém e arrasta pro lado. */
+      .st-key-cal_head_box [data-testid="stPlotlyChart"],
+      .st-key-cal_box [data-testid="stPlotlyChart"] {{
+        min-width: {LARGURA_MIN}px;
       }}
       /* Cabeçalho (datas): min-height evita que ele encolha em telas baixas e
          corte a linha "SEMANA N" do topo. */
       .st-key-cal_head_box {{
         overflow-y: auto;
-        overflow-x: hidden;
         min-height: 112px;
         border-top: 1px solid #ECECEC;
         border-radius: 6px 6px 0 0;
         margin-bottom: -1rem;
       }}
-      /* Faixas: rolam na vertical aqui dentro (a horizontal é do envelope). */
+      /* Faixas: rolam na vertical aqui dentro. */
       .st-key-cal_box {{
         max-height: 68vh;
         overflow-y: auto;
-        overflow-x: hidden;
         border-bottom: 1px solid #ECECEC;
         border-radius: 0 0 6px 6px;
       }}
@@ -1072,6 +1071,34 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# Mantém a rolagem horizontal do cabeçalho e das faixas SINCRONIZADAS: no celular,
+# arrastar um pro lado move o outro junto (datas seguem alinhadas com as barras).
+st.components.v1.html(
+    """
+    <script>
+    (function () {
+      function liga() {
+        try {
+          const doc = window.parent.document;
+          const head = doc.querySelector('.st-key-cal_head_box');
+          const body = doc.querySelector('.st-key-cal_box');
+          if (!head || !body || head.dataset.syncOn) return;
+          head.dataset.syncOn = body.dataset.syncOn = '1';
+          let lock = false;
+          const mirror = (a, b) => a.addEventListener('scroll', function () {
+            if (lock) return; lock = true; b.scrollLeft = a.scrollLeft; lock = false;
+          });
+          mirror(head, body); mirror(body, head);
+        } catch (e) {}
+      }
+      setInterval(liga, 400); liga();
+    })();
+    </script>
+    """,
+    height=0,
+)
+
 _cfg_cal = {
     "displayModeBar": False,      # esconde a barra de ferramentas (canto sup. dir.)
     "scrollZoom": False,          # sem zoom pela rolagem do mouse
@@ -1079,19 +1106,15 @@ _cfg_cal = {
     "showAxisDragHandles": False, # sem alças de arraste nos eixos
     "displaylogo": False,
 }
-# Um ÚNICO envelope que rola na horizontal, com o cabeçalho (parado) em cima e as
-# faixas (rolam na vertical) embaixo — os dois com a MESMA largura fixa e, por
-# isso, sempre alinhados ao arrastar pro lado.
-with st.container(key="cal_scroll"):
-    with st.container(key="cal_head_box"):
-        st.plotly_chart(
-            fig_head, use_container_width=False, config=_cfg_cal,
-            key="grafico_cabecalho",
-        )
-    with st.container(key="cal_box"):
-        st.plotly_chart(
-            fig, use_container_width=False, config=_cfg_cal, key="grafico_corpo",
-        )
+# Cabeçalho num quadro próprio (fica parado); faixas num quadro rolável embaixo.
+with st.container(key="cal_head_box"):
+    st.plotly_chart(
+        fig_head, use_container_width=True, config=_cfg_cal, key="grafico_cabecalho",
+    )
+with st.container(key="cal_box"):
+    st.plotly_chart(
+        fig, use_container_width=True, config=_cfg_cal, key="grafico_corpo",
+    )
 
 
 # ----------------------------------------------------------------------------
