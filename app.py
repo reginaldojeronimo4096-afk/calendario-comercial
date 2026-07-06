@@ -1029,34 +1029,45 @@ fig_head.add_annotation(
 # simplesmente não se mexe quando você rola as faixas. O `scrollbar-gutter:
 # stable` reserva o MESMO espaço de barra de rolagem nos dois, para as colunas
 # de datas ficarem alinhadas com as barras das faixas.
+# Largura FIXA do calendário: em vez de esticar/espremer conforme a tela (que no
+# celular em pé virava um borrão ilegível), o calendário mantém uma largura
+# legível e, em telas estreitas, ROLA na horizontal (arrasta pro lado). Conta:
+# 120+10 de margem + ~38px por dia. Ajuste o "38" se quiser as colunas de dias
+# mais largas (número maior) ou mais estreitas (número menor).
+LARGURA_CAL = 130 + 38 * len(dias)
+fig.update_layout(width=LARGURA_CAL)
+fig_head.update_layout(width=LARGURA_CAL)
+
 st.markdown(
-    """
+    f"""
     <style>
-      .st-key-cal_head_box, .st-key-cal_box {
+      /* Envelope que ROLA na horizontal: cabeçalho + faixas rolam JUNTOS (assim
+         as datas continuam alinhadas com as barras ao arrastar pro lado). */
+      .st-key-cal_scroll {{ overflow-x: auto; }}
+      .st-key-cal_head_box, .st-key-cal_box {{
+        width: {LARGURA_CAL}px;                 /* mesma largura do gráfico */
         scrollbar-gutter: stable;               /* mesmo recuo de barra nos dois */
-        overflow-x: hidden;
         border-left: 1px solid #ECECEC;
         border-right: 1px solid #ECECEC;
-      }
-      /* Quadro do cabeçalho (datas): não rola; só reserva o gutter e emenda no
-         quadro de baixo (borda inferior aberta + margem negativa p/ colar).
-         min-height: impede o quadro de encolher em telas baixas e cortar a linha
-         "SEMANA N" do topo (o fig_head tem 104px; a folga garante que apareça
-         inteiro — ciclo + SEMANA + datas). */
-      .st-key-cal_head_box {
+      }}
+      /* Cabeçalho (datas): min-height evita que ele encolha em telas baixas e
+         corte a linha "SEMANA N" do topo. */
+      .st-key-cal_head_box {{
         overflow-y: auto;
+        overflow-x: hidden;
         min-height: 112px;
         border-top: 1px solid #ECECEC;
         border-radius: 6px 6px 0 0;
         margin-bottom: -1rem;
-      }
-      /* Quadro das faixas: rolagem própria (as faixas rolam aqui dentro). */
-      .st-key-cal_box {
+      }}
+      /* Faixas: rolam na vertical aqui dentro (a horizontal é do envelope). */
+      .st-key-cal_box {{
         max-height: 68vh;
         overflow-y: auto;
+        overflow-x: hidden;
         border-bottom: 1px solid #ECECEC;
         border-radius: 0 0 6px 6px;
-      }
+      }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -1068,15 +1079,19 @@ _cfg_cal = {
     "showAxisDragHandles": False, # sem alças de arraste nos eixos
     "displaylogo": False,
 }
-# Cabeçalho num quadro próprio (fica parado); faixas num quadro rolável embaixo.
-with st.container(key="cal_head_box"):
-    st.plotly_chart(
-        fig_head, use_container_width=True, config=_cfg_cal, key="grafico_cabecalho",
-    )
-with st.container(key="cal_box"):
-    st.plotly_chart(
-        fig, use_container_width=True, config=_cfg_cal, key="grafico_corpo",
-    )
+# Um ÚNICO envelope que rola na horizontal, com o cabeçalho (parado) em cima e as
+# faixas (rolam na vertical) embaixo — os dois com a MESMA largura fixa e, por
+# isso, sempre alinhados ao arrastar pro lado.
+with st.container(key="cal_scroll"):
+    with st.container(key="cal_head_box"):
+        st.plotly_chart(
+            fig_head, use_container_width=False, config=_cfg_cal,
+            key="grafico_cabecalho",
+        )
+    with st.container(key="cal_box"):
+        st.plotly_chart(
+            fig, use_container_width=False, config=_cfg_cal, key="grafico_corpo",
+        )
 
 
 # ----------------------------------------------------------------------------
