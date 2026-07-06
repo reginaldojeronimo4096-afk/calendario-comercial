@@ -279,8 +279,10 @@ def _data_iso(v):
         return None
 
 
-def _texto(v):
-    """Texto seguro (nunca None/NaN) para gravar no banco."""
+def _para_texto(v):
+    """Texto seguro (nunca None/NaN) para gravar no banco.
+    NOME ÚNICO de propósito: NÃO usar '_texto' — esse nome é reaproveitado como
+    variável no desenho dos ciclos (lá embaixo), o que atropelaria esta função."""
     try:
         if v is None or pd.isna(v):
             return ""
@@ -309,12 +311,12 @@ def salvar(df: pd.DataFrame) -> None:
     # TypeError ao juntar a ação nova, no Python novo da hospedagem).
     registros = [
         {
-            "acao": _texto(rec.get("Ação")),
-            "categoria": _texto(rec.get("Categoria")),
+            "acao": _para_texto(rec.get("Ação")),
+            "categoria": _para_texto(rec.get("Categoria")),
             "inicio": _data_iso(rec.get("Início")),
             "fim": _data_iso(rec.get("Fim")),
-            "cor": _texto(rec.get("Cor")),
-            "detalhes": _texto(rec.get("Detalhes")),
+            "cor": _para_texto(rec.get("Cor")),
+            "detalhes": _para_texto(rec.get("Detalhes")),
         }
         for rec in df.to_dict(orient="records")
     ]
@@ -338,7 +340,7 @@ def carregar_ciclos() -> pd.DataFrame:
 def salvar_ciclos(df: pd.DataFrame) -> None:
     registros = [
         {
-            "ciclo": _texto(rec.get("Ciclo")),
+            "ciclo": _para_texto(rec.get("Ciclo")),
             "inicio": _data_iso(rec.get("Início")),
             "fim": _data_iso(rec.get("Fim")),
         }
