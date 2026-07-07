@@ -161,7 +161,18 @@ def pagina_promocoes(eh_admin: bool = False) -> None:
                     else:
                         st.warning("Nenhuma aba 'LISTA_' visível foi encontrada no arquivo.")
                 except Exception as e:
-                    st.error(f"Não consegui ler o arquivo. Detalhe: {e}")
+                    _msg = str(e).lower()
+                    if "zip" in _msg or "badzip" in _msg:
+                        st.error(
+                            "⚠️ Este arquivo parece **corrompido ou incompleto** — "
+                            "geralmente é um **download que não terminou**, ou um arquivo "
+                            "que está **só na nuvem** (OneDrive) e não baixou inteiro.\n\n"
+                            "**O que fazer:** abra a pasta, confirme que o arquivo baixou "
+                            "100% (ícone sem a nuvenzinha) ou **baixe de novo**, e tente "
+                            "subir mais uma vez. 🙂"
+                        )
+                    else:
+                        st.error(f"Não consegui ler o arquivo. Detalhe: {e}")
 
     st.divider()
 
