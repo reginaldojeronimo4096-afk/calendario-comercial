@@ -41,6 +41,11 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
   **Remover** = apaga a linha de vez, via `db.remover_usuario`). Admins iniciais nascem dos
   secrets `[[admin_inicial]]` via `auth.inicializar()` (só cria se não existir; se remover um
   admin pela tela mas ele continuar nos secrets, renasce no próximo carregamento).
+- **Esqueci a senha** (`auth._form_reset`, modo `_modo_reset`): auto-redefinição SÓ para
+  **leitores** do domínio (`DOMINIO_CORP`) — digita e-mail + senha nova, sem confirmação por
+  e-mail (mesma confiança do cadastro). **admin/editor são barrados** aqui de propósito (protege
+  as contas de mais poder — usam o "🔑 Resetar senha" da tela de gestão). Sucesso volta ao login
+  com aviso via `_login_flash`.
 - **Segredos** (`st.secrets`): `[supabase] url/service_key` e os `[[admin_inicial]]`.
   Nunca commitar `.streamlit/secrets.toml` (está no `.gitignore`).
 - `carregar/salvar/carregar_ciclos/salvar_ciclos` mantêm a MESMA assinatura de antes, mas

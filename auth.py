@@ -156,11 +156,17 @@ def tela_login() -> None:
         )
         if st.session_state.get("_modo_cadastro"):
             _form_cadastro()
+        elif st.session_state.get("_modo_reset"):
+            _form_reset()
         else:
             _form_login()
 
 
 def _form_login() -> None:
+    # Aviso de sucesso vindo do "Redefinir senha" (sobrevive ao recarregamento).
+    _flash = st.session_state.pop("_login_flash", None)
+    if _flash:
+        st.success(_flash)
     st.markdown("<div class='login-sub'>Entre na sua conta</div>", unsafe_allow_html=True)
     with st.form("login_form"):
         usuario = st.text_input("E-mail / Usuário")
@@ -182,10 +188,17 @@ def _form_login() -> None:
             }
             st.rerun()
 
-    if st.button("Criar conta", key="ir_cadastro"):
+    _c1, _c2 = st.columns(2)
+    if _c1.button("Criar conta", key="ir_cadastro", use_container_width=True):
         st.session_state._modo_cadastro = True
         st.rerun()
-    st.caption("Esqueceu a senha? Peça a um administrador para redefinir. 🙂")
+    if _c2.button("Esqueci a senha", key="ir_reset", use_container_width=True):
+        st.session_state._modo_reset = True
+        st.rerun()
+    st.caption(
+        f"Leitores {DOMINIO_CORP} redefinem a senha sozinhos. "
+        "Administradores/editores: peça a um administrador. 🙂"
+    )
 
 
 def _form_cadastro() -> None:
@@ -251,6 +264,73 @@ def _form_cadastro() -> None:
 
     if st.button("← Voltar ao login", key="voltar_login"):
         st.session_state._modo_cadastro = False
+        st.rerun()
+
+
+def _form_reset() -> None:
+    """Auto-redefinição de senha para LEITORES com e-mail do domínio corporativo.
+    Mesma confiança do cadastro (domínio = empresa, sem confirmação por e-mail).
+    Admin/editor NÃO redefinem por aqui (protege as contas de mais poder)."""
+    st.markdown(
+        "<div class='login-sub'>Redefinir senha</div>", unsafe_allow_html=True
+    )
+    st.caption(
+        f"Para leitores com e-mail **{DOMINIO_CORP}**: digite seu e-mail e escolha "
+        "uma senha nova. Contas de administrador/editor não redefinem por aqui — "
+        "peça a um administrador."
+    )
+    # Nonce nas chaves: ao redefinir com SUCESSO, limpa os campos (widgets novos).
+    st.session_state.setdefault("_reset_nonce", 0)
+    _n = st.session_state._reset_nonce
+
+    with st.form("reset_form"):
+        email_in = st.text_input(
+            "E-mail", key=f"rst_email_{_n}", placeholder=f"seunome{DOMINIO_CORP}"
+        )
+        senha = st.text_input("Nova senha", type="password", key=f"rst_senha_{_n}")
+        senha2 = st.text_input(
+            "Repita a nova senha", type="password", key=f"rst_senha2_{_n}"
+        )
+        enviar = st.form_submit_button("Redefinir senha", use_container_width=True)
+
+    if enviar:
+        email = email_in.strip().lower()
+        if not (email and senha):
+            st.error("Preencha o e-mail e a nova senha.")
+        elif not email.endswith(DOMINIO_CORP):
+            st.error(
+                f"A redefinição automática é só para e-mails {DOMINIO_CORP}. "
+                "Para outros e-mails, peça a um administrador."
+            )
+        elif len(senha) < 4:
+            st.error("A senha precisa ter pelo menos 4 caracteres.")
+        elif senha != senha2:
+            st.error("As duas senhas não são iguais.")
+        else:
+            u = db.buscar_usuario(email)
+            if not u:
+                st.error(
+                    "Não encontramos uma conta com esse e-mail. Confira o e-mail "
+                    "ou clique em “Criar conta”."
+                )
+            elif u.get("papel") in ("admin", "editor"):
+                st.error(
+                    "Contas de administrador/editor não redefinem por aqui, por "
+                    "segurança. Peça a um administrador. 🙂"
+                )
+            elif u.get("status") == "revogado":
+                st.error("Seu acesso foi revogado. Fale com um administrador.")
+            else:
+                db.atualizar_usuario(u["id"], {"senha_hash": _hash(senha)})
+                st.session_state._reset_nonce += 1     # limpa os campos
+                st.session_state._modo_reset = False   # volta para o login
+                st.session_state["_login_flash"] = (
+                    "Senha redefinida! ✅ Entre com a nova senha."
+                )
+                st.rerun()
+
+    if st.button("← Voltar ao login", key="voltar_login_reset"):
+        st.session_state._modo_reset = False
         st.rerun()
 
 

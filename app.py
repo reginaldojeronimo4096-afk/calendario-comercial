@@ -904,7 +904,11 @@ fig.update_yaxes(
     # cada faixa cair exatamente na sua sub-linha (DESTAQUE no topo, ... CRM embaixo).
     categoryorder="array",
     categoryarray=ordem_lanes,
-    autorange="reversed",  # 1ª faixa (DESTAQUE) no topo; última embaixo
+    # Range EXPLÍCITO (em vez de autorange) p/ as faixas encostarem no topo/base sem
+    # respiro automático — era ele que deixava a faixa branca grande abaixo do
+    # DESTAQUE fixo. Invertido (maior embaixo): 1ª faixa no topo, última embaixo. O
+    # ±0.06 é só p/ as linhas cinza das bordas não ficarem cortadas na quina.
+    range=[n_lanes - 0.5 + 0.06, -0.5 - 0.06],
     fixedrange=True,
 )
 fig.update_xaxes(
@@ -915,9 +919,9 @@ fig.update_xaxes(
     range=[borda_esq, borda_dir],
     fixedrange=True,
 )
-# Altura do corpo: ~46px por sub-linha. Sem a margem de topo grande de antes
-# (ciclo/semanas/dias foram para o cabeçalho); só um respiro mínimo em cima.
-area_plot = 50 + 46 * n_lanes
+# Altura do corpo: ~46px por sub-linha. Base pequena (antes era 50, o que criava um
+# vão branco no topo, agora que o DESTAQUE saiu para a faixa fixa); +8 só p/ folga.
+area_plot = 8 + 46 * n_lanes
 fig.update_layout(
     showlegend=False,
     height=area_plot + 12,
