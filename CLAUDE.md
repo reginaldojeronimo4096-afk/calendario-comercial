@@ -62,7 +62,13 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
      FORA de `st.form`** (por isso o form virou `st.container()` + `st.button` comum). A paleta é
      renderizada ANTES do color_picker "Ajustar tom" no código (os botões setam `cor_tom`, que não
      pode ser modificado depois do widget existir). Posição visual vem da ORDEM das colunas.
-4. **Gráfico Plotly (`px.timeline`)** — o calendário:
+4. **Gráfico Plotly (`px.timeline`)** — o calendário. São **TRÊS** figuras alinhadas
+   (mesma margem `l=120/r=10` e mesmo intervalo de datas), dentro do envelope rolável
+   `cal_scroll`: **`fig_head`** (Portfólio do Ciclo + SEMANAS + datas) e **`fig_destaque`**
+   (a faixa `FAIXA_FIXA_TOPO` = "DESTAQUE DA COMUNICAÇÃO") ficam no quadro FIXO `cal_head_box`
+   (não rola); **`fig`** (as demais faixas = `FAIXAS_CORPO`) fica no quadro rolável `cal_box`.
+   `plot_df` é dividido em `topo_df` (faixa fixa, 1 sub-linha — nunca empilha) e o corpo.
+   `_linha_vazia(cat)` gera placeholder transparente p/ faixa aparecer vazia sem dados.
    - Texto das barras: negrito + cor de contraste por barra; nomes compridos quebram em **até 2
      linhas** só quando **não cabem** na largura da barra (`CHARS_LARGURA_CHEIA`, hoje 75).
    - Fins de semana em **vermelho** nos rótulos; faixa amarela/azul do "Portfólio do Ciclo" no topo.

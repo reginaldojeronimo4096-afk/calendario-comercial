@@ -59,6 +59,12 @@ CATEGORIAS_PADRAO = [
 # A ordem fixa das faixas no calendário é exatamente a lista acima.
 FAIXAS_FIXAS = list(CATEGORIAS_PADRAO)
 
+# A 1ª faixa ("DESTAQUE DA COMUNICAÇÃO") fica GRUDADA no cabeçalho (não rola junto
+# com as demais) — desenhada num gráfico próprio (fig_destaque) na zona fixa do
+# topo. FAIXAS_CORPO são as faixas que rolam no corpo do calendário.
+FAIXA_FIXA_TOPO = FAIXAS_FIXAS[0]
+FAIXAS_CORPO = [c for c in FAIXAS_FIXAS if c != FAIXA_FIXA_TOPO]
+
 # Quebras de linha MANUAIS para rótulos específicos (mantêm termos juntos em vez
 # de deixar a quebra automática separar palavras que devem ficar na mesma linha).
 QUEBRA_MANUAL = {
@@ -715,11 +721,34 @@ plot_df["Fim_fmt"] = pd.to_datetime(plot_df["Fim"]).dt.strftime("%d/%m/%Y")
 # por você) entram logo depois, na ordem em que aparecem.
 # ---------------------------------------------------------------------------
 plot_df = plot_df.sort_values("Início_plot").reset_index(drop=True)
+
+# Separa a faixa fixa do topo ("DESTAQUE DA COMUNICAÇÃO") — desenhada à parte,
+# grudada no cabeçalho — do restante das faixas (o corpo que rola).
+def _linha_vazia(cat):
+    """Linha transparente (1 dia) só p/ a faixa aparecer VAZIA quando o mês não
+    tem ação nela — mantém a MESMA estrutura de colunas já derivadas no plot_df."""
+    d0 = pd.Timestamp(sel_inicio)
+    return {
+        "Ação": "", "Categoria": cat, "Início": sel_inicio, "Fim": sel_inicio,
+        "Cor": "rgba(0,0,0,0)", "Detalhes": "",
+        "Início_plot": d0 - meia, "Fim_plot": d0 + meia,
+        "Rótulo": "", "Início_fmt": d0.strftime("%d/%m/%Y"),
+        "Fim_fmt": d0.strftime("%d/%m/%Y"),
+    }
+
+topo_df = plot_df[plot_df["Categoria"] == FAIXA_FIXA_TOPO].copy().reset_index(drop=True)
+plot_df = plot_df[plot_df["Categoria"] != FAIXA_FIXA_TOPO].copy().reset_index(drop=True)
+if topo_df.empty:                     # mês sem comunicação -> faixa fixa vazia
+    topo_df = pd.DataFrame([_linha_vazia(FAIXA_FIXA_TOPO)])
+if plot_df.empty:                     # corpo sem nada -> ao menos 1 faixa vazia
+    plot_df = pd.DataFrame([_linha_vazia(FAIXAS_CORPO[0])])
+
 cats_presentes = list(dict.fromkeys(plot_df["Categoria"].tolist()))
 # Faixas fixas SEMPRE visíveis (na ordem definida) + faixas extras que
 # porventura existam nos dados e não estejam na lista fixa (vão para o fim).
+# FAIXAS_CORPO já EXCLUI a faixa fixa do topo (que sai no fig_destaque).
 extras = [c for c in cats_presentes if c not in FAIXAS_FIXAS and str(c).strip()]
-ordem_cats = FAIXAS_FIXAS + extras
+ordem_cats = FAIXAS_CORPO + extras
 
 # Empilha ações que se SOBREPÕEM na mesma faixa em "sub-linhas", para nenhuma
 # ficar escondida atrás da outra (resolve o caso de blocos no mesmo período).
@@ -1033,6 +1062,76 @@ fig_head.add_annotation(
     xanchor="right", yanchor="middle", align="right", xshift=-8,
 )
 
+# ===========================================================================
+# fig_destaque — a faixa "DESTAQUE DA COMUNICAÇÃO", GRUDADA no cabeçalho
+# ===========================================================================
+# Terceiro gráfico, com a MESMA margem (l=120, r=10) e o MESMO intervalo de datas
+# dos outros dois — então as colunas casam. Vai na zona fixa (não rola). Como esta
+# faixa NUNCA empilha (sempre uma comunicação após a outra), é uma sub-linha só.
+topo_df["_lane"] = FAIXA_FIXA_TOPO  # uma única sub-linha
+topo_df["_cor_id"] = topo_df.index.astype(str)
+mapa_cores_topo = {
+    str(i): (r["Cor"] if isinstance(r["Cor"], str) and r["Cor"] else "#2E86DE")
+    for i, r in topo_df.iterrows()
+}
+_det_topo = topo_df["Detalhes"].fillna("").astype(str).str.strip()
+topo_df["_det_hover"] = _det_topo.map(lambda d: f"<br>{d}" if d else "")
+
+fig_destaque = px.timeline(
+    topo_df,
+    x_start="Início_plot", x_end="Fim_plot", y="_lane",
+    color="_cor_id", color_discrete_map=mapa_cores_topo,
+    text="Rótulo",
+    custom_data=["_det_hover", "Início_fmt", "Fim_fmt"],
+)
+fig_destaque.update_traces(
+    textposition="auto", insidetextanchor="middle", textangle=0, cliponaxis=False,
+    hovertemplate=(
+        "<b>%{text}</b><br>"
+        "Período: %{customdata[1]} → %{customdata[2]}"
+        "%{customdata[0]}<extra></extra>"
+    ),
+)
+for _tr in fig_destaque.data:
+    _c = _tr.marker.color if isinstance(_tr.marker.color, str) else "#2E86DE"
+    _tr.textfont = dict(color=_contraste_texto(_c), size=13)
+
+fig_destaque.update_yaxes(title="", showticklabels=False, fixedrange=True)
+fig_destaque.update_xaxes(
+    title="", showgrid=False, showticklabels=False,
+    range=[borda_esq, borda_dir], fixedrange=True,
+)
+fig_destaque.update_layout(
+    showlegend=False,
+    height=58,                                   # ~46px de barra (igual às do corpo)
+    margin=dict(l=120, r=10, t=6, b=6),          # MESMO l/r -> colunas alinhadas
+    bargap=0,
+    dragmode=False,
+    paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
+    hoverlabel=dict(bgcolor="#FFFFFF", bordercolor="#888888",
+                    font=dict(color="#000000", size=13), align="left"),
+)
+# Sombreado alternado das semanas (igual ao corpo e ao cabeçalho).
+for _x0, _x1, _cx, _sn in semanas_seg:
+    if _sn % 2 == 0:
+        fig_destaque.add_shape(
+            type="rect", xref="x", yref="paper", x0=_x0, x1=_x1, y0=0, y1=1,
+            fillcolor="#000000", opacity=0.035, line_width=0, layer="below",
+        )
+# Linhas finas fechando o topo e a base da faixa (mesmo cinza das faixas do corpo).
+for _yb in (0, 1):
+    fig_destaque.add_shape(
+        type="line", xref="paper", yref="paper", x0=-0.5, x1=1, y0=_yb, y1=_yb,
+        line=dict(color="#E3E3E3", width=1), layer="above",
+    )
+# Rótulo "DESTAQUE DA COMUNICAÇÃO" à esquerda (mesma direção dos demais títulos).
+fig_destaque.add_annotation(
+    x=0, y=0.5, xref="paper", yref="paper",
+    text=quebra_rotulo(FAIXA_FIXA_TOPO.upper()), showarrow=False,
+    font=dict(size=12, color="#444"),
+    xanchor="right", yanchor="middle", align="right", xshift=-8,
+)
+
 # --- Render: DOIS quadros — cabeçalho fixo em cima + faixas roláveis embaixo -
 # O position:sticky não cola de forma confiável no Streamlit (nem solto na
 # página, nem dentro de um quadro). Solução determinística: separar em DOIS
@@ -1071,6 +1170,7 @@ st.markdown(
         border-top: 1px solid #ECECEC;
         border-radius: 6px 6px 0 0;
         margin-bottom: -1rem;
+        gap: 0 !important;   /* cola a faixa fixa logo abaixo das datas, sem vão */
       }}
       /* Faixas: rolam na vertical aqui dentro. */
       .st-key-cal_box {{
@@ -1098,6 +1198,11 @@ with st.container(key="cal_scroll"):
         st.plotly_chart(
             fig_head, use_container_width=True, config=_cfg_cal,
             key="grafico_cabecalho",
+        )
+        # A faixa fixa "DESTAQUE DA COMUNICAÇÃO", logo abaixo das datas (não rola).
+        st.plotly_chart(
+            fig_destaque, use_container_width=True, config=_cfg_cal,
+            key="grafico_destaque",
         )
     with st.container(key="cal_box"):
         st.plotly_chart(
