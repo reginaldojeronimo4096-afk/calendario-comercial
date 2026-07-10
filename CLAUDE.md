@@ -34,9 +34,13 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
 - **Papéis**: `admin` (tudo + gerenciar usuários), `editor` (edita calendário), `leitor`
   (só vê + baixa Excel). No `app.py`: `PAPEL`, `PODE_EDITAR`, `EH_ADMIN` (definidos logo
   após o portão de login) controlam o que aparece.
-- **Login/cadastro**: `auth.tela_login()` (cara Natura). "Criar conta" → status `pendente`
-  → admin aprova em `auth.dialog_gerenciar_usuarios()`. Admins iniciais nascem dos secrets
-  `[[admin_inicial]]` via `auth.inicializar()` (só cria se não existir).
+- **Login/cadastro**: `auth.tela_login()` (cara Natura). O **login é o e-mail**. Cadastro
+  automático por domínio (`auth.DOMINIO_CORP`, hoje `@natura.net`): e-mail do domínio →
+  nasce `leitor`/`ativo` (entra na hora, sem aprovação); qualquer outro e-mail → `pendente`
+  → admin aprova em `auth.dialog_gerenciar_usuarios()` (que também tem **Revogar** e o
+  **Remover** = apaga a linha de vez, via `db.remover_usuario`). Admins iniciais nascem dos
+  secrets `[[admin_inicial]]` via `auth.inicializar()` (só cria se não existir; se remover um
+  admin pela tela mas ele continuar nos secrets, renasce no próximo carregamento).
 - **Segredos** (`st.secrets`): `[supabase] url/service_key` e os `[[admin_inicial]]`.
   Nunca commitar `.streamlit/secrets.toml` (está no `.gitignore`).
 - `carregar/salvar/carregar_ciclos/salvar_ciclos` mantêm a MESMA assinatura de antes, mas
