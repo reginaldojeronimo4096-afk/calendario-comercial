@@ -438,11 +438,12 @@ def _passo_mes(delta: int) -> None:
         st.session_state.ano_sel = a
 
 
-col_titulo, col_mes, col_ano = st.columns([7, 2.2, 1])
+col_titulo, col_mes, col_ano = st.columns([7, 2, 1])
 with col_mes:
     # selectbox (com a setinha que abre TODOS os meses) + botões − e + ao lado,
-    # alinhados por baixo p/ casar com a altura do campo.
-    cm_sel, cm_menos, cm_mais = st.columns([2, 1, 1], vertical_alignment="bottom")
+    # alinhados por baixo p/ casar com a altura do campo. Colunas dos botões
+    # estreitas (0.6) p/ eles ficarem pequenos e discretos, colados no campo.
+    cm_sel, cm_menos, cm_mais = st.columns([2.6, 0.6, 0.6], vertical_alignment="bottom")
     with cm_sel:
         mes_num = st.selectbox(
             "Mês",
@@ -463,11 +464,12 @@ with col_ano:
 with col_titulo:
     st.title(f"📅 Calendário da Grade Comercial de {MESES_PT[mes_num - 1]}")
 
-# Botões − + do mês: compactos (sem sobrar altura) p/ ficarem parecidos com os do Ano.
+# Botões − + do mês: pequenos e discretos (menor altura, sem padding lateral).
 st.markdown(
     "<style>"
     ".st-key-mes_menos button,.st-key-mes_mais button{"
-    "padding:0 !important;font-size:1.15rem;font-weight:700;}"
+    "padding:0 !important;min-height:1.7rem !important;height:1.7rem !important;"
+    "font-size:0.95rem;font-weight:700;line-height:1;}"
     "</style>",
     unsafe_allow_html=True,
 )
