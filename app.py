@@ -1091,7 +1091,7 @@ for idx, (_ci, _cf, _texto) in enumerate(ciclos_visiveis):
     fig_head.add_annotation(
         x=_x0 + (_x1 - _x0) / 2, y=0.73, xref="x", yref="paper",  # centro da faixa nova
         text=f"<b>{_texto}</b>", showarrow=False,
-        font=dict(size=12, color=_contraste_texto(cor["fill"])),
+        font=dict(size=14, color=_contraste_texto(cor["fill"])),  # fonte maior no ciclo
         xanchor="center", yanchor="middle",
     )
 
