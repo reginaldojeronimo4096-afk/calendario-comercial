@@ -916,8 +916,10 @@ dias = pd.date_range(mes_inicio, mes_fim_excl - timedelta(days=1), freq="D")
 PT_WD = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
 
 def _rotulo_dia(x) -> str:
-    """Rótulo 'DiaSemana<br>DD/MM'. Sáb (5) e Dom (6) saem em vermelho."""
+    """Rótulo 'DiaSemana<br>DD/MM'. HOJE em azul/negrito; Sáb (5)/Dom (6) em vermelho."""
     txt = f"{PT_WD[x.weekday()]}<br>{x:%d/%m}"
+    if x.date() == hoje:                      # dia de hoje em destaque (prioridade)
+        return f"<b><span style='color:#1E88E5'>{txt}</span></b>"
     if x.weekday() in (5, 6):
         return f"<span style='color:#E8463A'>{txt}</span>"
     return txt
@@ -1233,6 +1235,24 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ---------------------------------------------------------------------------
+# Marcador de HOJE: linha vertical pontilhada azul na coluna do dia atual, nas
+# TRÊS figuras (cabeçalho, faixa fixa e corpo), para "descer" alinhada. Aparece
+# só quando o mês/ano exibido é o de hoje (senão não há "hoje" naquele mês).
+# ---------------------------------------------------------------------------
+if ano == hoje.year and mes_num == hoje.month:
+    _hoje_x = pd.Timestamp(hoje)
+    _COR_HOJE = "#1E88E5"
+    for _fig_hoje in (fig_destaque, fig):
+        _fig_hoje.add_shape(
+            type="line", xref="x", yref="paper", x0=_hoje_x, x1=_hoje_x, y0=0, y1=1,
+            line=dict(color=_COR_HOJE, width=2, dash="dot"), layer="above",
+        )
+    fig_head.add_shape(
+        type="line", xref="x", yref="paper", x0=_hoje_x, x1=_hoje_x, y0=-0.8, y1=1.0,
+        line=dict(color=_COR_HOJE, width=2, dash="dot"), layer="above",
+    )
+
 _cfg_cal = {
     "displayModeBar": False,      # esconde a barra de ferramentas (canto sup. dir.)
     "scrollZoom": False,          # sem zoom pela rolagem do mouse
@@ -1352,7 +1372,7 @@ with st.expander(_titulo_painel, expanded=False):
         key="editor",
     )
 
-    col_a, col_b, col_c = st.columns([1, 1, 2])
+    col_a, col_b, col_c, col_d = st.columns([1, 1, 1, 1.5])
     with col_a:
         if PODE_EDITAR and st.button("💾 Salvar alterações", type="primary"):
             # Remove as linhas marcadas em "Excluir", descarta as colunas auxiliares
@@ -1367,6 +1387,23 @@ with st.expander(_titulo_painel, expanded=False):
             st.rerun()
 
     with col_b:
+        # CSV (Google Sheets / qualquer planilha) — mesmas colunas do Excel, sem
+        # "Cor". Datas em DD/MM/AAAA e BOM (utf-8-sig) p/ os acentos abrirem certo.
+        df_csv = st.session_state.df.drop(columns=["Cor"], errors="ignore").copy()
+        for _dcol in ("Início", "Fim"):
+            if _dcol in df_csv.columns:
+                df_csv[_dcol] = pd.to_datetime(
+                    df_csv[_dcol], errors="coerce"
+                ).dt.strftime("%d/%m/%Y")
+        st.download_button(
+            "⬇️ Baixar CSV",
+            data=df_csv.to_csv(index=False).encode("utf-8-sig"),
+            file_name="acoes.csv",
+            mime="text/csv",
+            help="Abre no Google Sheets (Arquivo → Importar) e em qualquer planilha.",
+        )
+
+    with col_c:
         # Gera o arquivo Excel (.xlsx) em memória, já formatado, para download.
         buffer = io.BytesIO()
         # "Cor" (hex) não é relevante no relatório — fica de fora do Excel.
@@ -1432,7 +1469,7 @@ with st.expander(_titulo_painel, expanded=False):
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-    with col_c:
+    with col_d:
         # Limpar TODO o calendário — no canto direito, discreto. Uso raro (recomeçar
         # do zero), mas disponível. Só admin/editor. Pede confirmação antes de apagar.
         if PODE_EDITAR and not st.session_state.get("confirmar_limpeza"):
