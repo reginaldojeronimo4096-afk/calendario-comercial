@@ -1223,7 +1223,7 @@ st.markdown(
            negativo faz o corpo SUBIR POR CIMA da faixa e escondê-la. Vai de leve:
            se ainda sobrar vão, aumente aos poucos (-14, -20...); se a faixa começar
            a sumir/cobrir, volte pra menos negativo. */
-        margin-top: -18px;
+        margin-top: -26px;
       }}
     </style>
     """,

@@ -97,9 +97,12 @@ def _css_login() -> None:
             border-radius: 16px;
             padding: 1.6rem 1.8rem 1.2rem;
             box-shadow: 0 18px 40px rgba(0,0,0,0.10);
-            max-width: 380px;          /* limita a largura do cartão */
+            max-width: 440px;          /* largura do cartão (um pouco mais largo) */
             margin: 6vh auto 0;        /* e centraliza na tela */
           }
+          /* Esconde o aviso "Press Enter to submit form" que aparece DENTRO do
+             campo — o botão "Entrar" já deixa claro o que fazer. */
+          .st-key-login_card [data-testid="InputInstructions"] { display: none !important; }
           .login-logo   { text-align:center; font-size:1.7rem; font-weight:800;
                            color:#EE7B30; margin: 0 0 .2rem; letter-spacing:.5px; }
           .login-titulo { text-align:center; font-size:1.35rem; font-weight:800;
