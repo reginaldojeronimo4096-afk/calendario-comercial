@@ -1137,18 +1137,15 @@ for _tr in fig_destaque.data:
     _c = _tr.marker.color if isinstance(_tr.marker.color, str) else "#2E86DE"
     _tr.textfont = dict(color=_contraste_texto(_c), size=13)
 
-fig_destaque.update_yaxes(
-    title="", showticklabels=False, fixedrange=True,
-    range=[0.5, -0.5], autorange=False,   # a única faixa preenche toda a altura, sem vão
-)
+fig_destaque.update_yaxes(title="", showticklabels=False, fixedrange=True)
 fig_destaque.update_xaxes(
     title="", showgrid=False, showticklabels=False,
     range=[borda_esq, borda_dir], fixedrange=True,
 )
 fig_destaque.update_layout(
     showlegend=False,
-    height=50,                                   # ~46px de barra (igual às do corpo)
-    margin=dict(l=120, r=10, t=2, b=2),          # MESMO l/r -> colunas alinhadas
+    height=58,                                   # ~46px de barra (igual às do corpo)
+    margin=dict(l=120, r=10, t=6, b=6),          # MESMO l/r -> colunas alinhadas
     bargap=0,
     dragmode=False,
     paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
@@ -1222,10 +1219,11 @@ st.markdown(
         overflow-y: auto;
         border-bottom: 1px solid #ECECEC;
         border-radius: 0 0 6px 6px;
-        /* PUXADOR do vão branco abaixo da faixa fixa "DESTAQUE". Sobe o corpo até
-           encostar (sobra só a linha fininha fixa). Mais negativo = fecha mais;
-           se as faixas COLAREM/sobrepuserem, deixe menos negativo (ex.: -30px). */
-        margin-top: -44px;
+        /* PUXADOR do vão abaixo da faixa fixa "DESTAQUE". CUIDADO: valor muito
+           negativo faz o corpo SUBIR POR CIMA da faixa e escondê-la. Vai de leve:
+           se ainda sobrar vão, aumente aos poucos (-14, -20...); se a faixa começar
+           a sumir/cobrir, volte pra menos negativo. */
+        margin-top: -8px;
       }}
     </style>
     """,
