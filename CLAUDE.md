@@ -86,6 +86,14 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
 6. **Exportar Excel** (openpyxl): cabeçalho verde/negrito, bordas, largura automática, datas
    **dd/mm/aaaa**, cabeçalho fixo. NÃO exporta a coluna "Cor" (hex).
 
+## Gotcha crítico: `Segmentation fault` no Streamlit Cloud (pandas 3.0)
+Se o app cair com `211 Segmentation fault` nos logs (não é exceção Python — é crash de
+lib nativa) ao interagir (ex.: trocar de mês), a causa foi o **pandas 3.0** (textos via
+PyArrow por padrão) brigando com plotly/streamlit na serialização. Correção: **fixar
+`pandas>=2.0,<3.0`** no requirements.txt. Mudar requirements = redeploy REINSTALA deps
+(mais lento, ~2-4 min; um "Reboot" simples pode não reinstalar). O `>=` sem teto pega
+sempre a versão mais nova a cada redeploy — cuidado com major novas.
+
 ## Gotcha crítico: `removeChild` no frontend (Google Tradutor)
 `NotFoundError: Failed to execute 'removeChild' on 'Node'` a CADA clique, no app inteiro =
 **tradução automática do navegador** (Google Tradutor do Chrome) reescrevendo o DOM e brigando
