@@ -171,6 +171,37 @@ st.markdown(
         background: #FDECEC !important; border: 1px solid #E8463A !important;
       }
       .st-key-btn_sair button:hover { background: #FADBD8 !important; }
+      /* Botões de DOWNLOAD (CSV / Excel): verde + negrito (é "baixar dados"). */
+      .st-key-dl_csv button, .st-key-dl_excel button {
+        font-weight: 700 !important; color: #1B7A32 !important;
+        background: #E9F7EF !important; border: 1px solid #21A038 !important;
+      }
+      .st-key-dl_csv button:hover, .st-key-dl_excel button:hover {
+        background: #D6F0E0 !important;
+      }
+      /* Limpar calendário (destrutivo): vermelho, mesmo tom do Sair (aviso). */
+      .st-key-btn_limpar button {
+        font-weight: 700 !important; color: #C0392B !important;
+        background: #FDECEC !important; border: 1px solid #E8463A !important;
+      }
+      .st-key-btn_limpar button:hover { background: #FADBD8 !important; }
+      /* Cabeçalho dos expanders (Editar/excluir ações, Atualizar Grade): negrito +
+         fundo leve, p/ dar destaque (fica com cara de painel clicável). */
+      [data-testid="stExpander"] summary {
+        font-weight: 700 !important; background: #F0F2F6 !important;
+      }
+      [data-testid="stExpander"] summary:hover { background: #E6EAF1 !important; }
+      /* Botão de ABRIR a barra lateral (» quando ela está fechada): caixinha com
+         borda azul + sombra, p/ não ficar "perdido" no canto. */
+      [data-testid="stSidebarCollapsedControl"] button {
+        background: #EAF2FB !important;
+        border: 1px solid #1E88E5 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
+      }
+      [data-testid="stSidebarCollapsedControl"] button:hover {
+        background: #D6E8FA !important;
+      }
     </style>
     """,
     unsafe_allow_html=True,
@@ -1399,6 +1430,7 @@ with st.expander(_titulo_painel, expanded=False):
             data=df_csv.to_csv(index=False).encode("utf-8-sig"),
             file_name="acoes.csv",
             mime="text/csv",
+            key="dl_csv",
             help="Abre no Google Sheets (Arquivo → Importar) e em qualquer planilha.",
         )
 
@@ -1466,13 +1498,14 @@ with st.expander(_titulo_painel, expanded=False):
             data=buffer.getvalue(),
             file_name="acoes.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_excel",
         )
 
     with col_d:
         # Limpar TODO o calendário — no canto direito, discreto. Uso raro (recomeçar
         # do zero), mas disponível. Só admin/editor. Pede confirmação antes de apagar.
         if PODE_EDITAR and not st.session_state.get("confirmar_limpeza"):
-            if st.button("🗑️ Limpar calendário (apagar tudo)"):
+            if st.button("🗑️ Limpar calendário (apagar tudo)", key="btn_limpar"):
                 st.session_state.confirmar_limpeza = True
                 st.rerun()
 
