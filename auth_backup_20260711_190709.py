@@ -180,7 +180,7 @@ def _form_login() -> None:
     with st.form("login_form"):
         usuario = st.text_input("E-mail / Usuário")
         senha = st.text_input("Senha", type="password")
-        entrar = st.form_submit_button("Entrar", width="stretch")
+        entrar = st.form_submit_button("Entrar", use_container_width=True)
 
     if entrar:
         u = db.buscar_usuario(usuario)
@@ -198,10 +198,10 @@ def _form_login() -> None:
             st.rerun()
 
     _c1, _c2 = st.columns(2)
-    if _c1.button("Criar conta", key="ir_cadastro", width="stretch"):
+    if _c1.button("Criar conta", key="ir_cadastro", use_container_width=True):
         st.session_state._modo_cadastro = True
         st.rerun()
-    if _c2.button("Esqueci a senha", key="ir_reset", width="stretch"):
+    if _c2.button("Esqueci a senha", key="ir_reset", use_container_width=True):
         st.session_state._modo_reset = True
         st.rerun()
     st.caption(
@@ -236,7 +236,7 @@ def _form_cadastro() -> None:
         )
         senha = st.text_input("Senha", type="password", key=f"cad_senha_{_n}")
         senha2 = st.text_input("Repita a senha", type="password", key=f"cad_senha2_{_n}")
-        enviar = st.form_submit_button("Solicitar acesso", width="stretch")
+        enviar = st.form_submit_button("Solicitar acesso", use_container_width=True)
 
     if enviar:
         email = usuario.strip().lower()  # guarda em minúsculas p/ evitar duplicar
@@ -300,7 +300,7 @@ def _form_reset() -> None:
         senha2 = st.text_input(
             "Repita a nova senha", type="password", key=f"rst_senha2_{_n}"
         )
-        enviar = st.form_submit_button("Redefinir senha", width="stretch")
+        enviar = st.form_submit_button("Redefinir senha", use_container_width=True)
 
     if enviar:
         email = email_in.strip().lower()
@@ -391,26 +391,26 @@ def dialog_gerenciar_usuarios() -> None:
             b1, b2 = st.columns(2)
             # Aprovar (pendente) / Salvar papel (ativo) / Reativar (revogado)
             if status == "pendente":
-                if b1.button("✅ Aprovar", key=f"aprovar_{uid}", width="stretch"):
+                if b1.button("✅ Aprovar", key=f"aprovar_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
                     st.rerun()
             elif status == "ativo":
-                if b1.button("💾 Papel", key=f"papel_btn_{uid}", width="stretch"):
+                if b1.button("💾 Papel", key=f"papel_btn_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"papel": papel_sel})
                     st.rerun()
             elif status == "revogado":
-                if b1.button("♻️ Reativar", key=f"reativar_{uid}", width="stretch"):
+                if b1.button("♻️ Reativar", key=f"reativar_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
                     st.rerun()
 
             # Revogar (não deixa revogar a própria conta, p/ não se trancar de fora)
             if status != "revogado" and not sou_eu:
-                if b2.button("🚫 Revogar", key=f"revogar_{uid}", width="stretch"):
+                if b2.button("🚫 Revogar", key=f"revogar_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"status": "revogado"})
                     st.rerun()
 
             # Resetar senha: gera uma temporária e mostra uma vez.
-            if st.button("🔑 Resetar senha", key=f"reset_{uid}", width="stretch"):
+            if st.button("🔑 Resetar senha", key=f"reset_{uid}", use_container_width=True):
                 temp = _secrets.token_urlsafe(6)
                 db.atualizar_usuario(uid, {"senha_hash": _hash(temp)})
                 st.session_state["_senha_temp"] = (u.get("usuario", ""), temp)
@@ -424,13 +424,13 @@ def dialog_gerenciar_usuarios() -> None:
                 if st.session_state.get(f"_conf_rm_{uid}"):
                     st.caption("Remover mesmo?")
                     r1, r2 = st.columns(2)
-                    if r1.button("Sim", key=f"rm_sim_{uid}", width="stretch"):
+                    if r1.button("Sim", key=f"rm_sim_{uid}", use_container_width=True):
                         db.remover_usuario(uid)
                         st.session_state.pop(f"_conf_rm_{uid}", None)
                         st.rerun()
-                    if r2.button("Não", key=f"rm_nao_{uid}", width="stretch"):
+                    if r2.button("Não", key=f"rm_nao_{uid}", use_container_width=True):
                         st.session_state.pop(f"_conf_rm_{uid}", None)
                         st.rerun()
-                elif st.button("🗑️ Remover", key=f"rm_{uid}", width="stretch"):
+                elif st.button("🗑️ Remover", key=f"rm_{uid}", use_container_width=True):
                     st.session_state[f"_conf_rm_{uid}"] = True
                     st.rerun()

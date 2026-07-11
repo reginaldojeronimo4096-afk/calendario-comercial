@@ -204,7 +204,7 @@ def _mostra_lista_promocoes() -> None:
                 + (f" · {L.get('link_lp')}" if L.get("link_lp") else "")
             )
         c2.markdown(f"**{L.get('total_skus', 0)}** SKUs")
-        if c3.button("ver ▸", key=f"ver_{L['id']}", use_container_width=True):
+        if c3.button("ver ▸", key=f"ver_{L['id']}", width="stretch"):
             st.session_state._grade_sel = L["lista_nome"]
             st.rerun()
         st.divider()
@@ -240,7 +240,7 @@ def _mostra_produtos(lista_nome: str) -> None:
             df["Descrição"].astype(str).str.lower().str.contains(busca, na=False)
         df = df[m]
 
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.dataframe(df, width="stretch", hide_index=True)
     st.download_button(
         "⬇️ Baixar Excel",
         data=_excel_bytes(df),

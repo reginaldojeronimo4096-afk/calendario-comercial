@@ -172,7 +172,7 @@ st.markdown(
 # NÃO causa o próprio removeChild.
 # ----------------------------------------------------------------------------
 def _desliga_traducao() -> None:
-    st.components.v1.html(
+    st.iframe(
         """
         <script>
         function noTrans(){
@@ -219,11 +219,11 @@ EH_ADMIN = PAPEL == "admin"                  # só admin gerencia usuários
 with st.sidebar:
     st.markdown(f"### 👤 {_U.get('nome') or _U['usuario']}")
     st.caption(f"Papel: **{PAPEL}**")
-    if st.button("🚪 Sair", use_container_width=True):
+    if st.button("🚪 Sair", width="stretch"):
         auth.sair()
     st.divider()
     # Abre a tela de consulta das promoções (Grade de Ativação) — para todos.
-    if st.button("📑 Promoções", use_container_width=True):
+    if st.button("📑 Promoções", width="stretch"):
         st.session_state["_view"] = "promocoes"
         st.session_state.pop("_grade_sel", None)
         st.rerun()
@@ -242,7 +242,7 @@ if st.session_state.get("_view") == "promocoes":
 # dias (por POSIÇÃO) e meses (por nome) em português — resiste à tradução.
 # ----------------------------------------------------------------------------
 def _traduz_calendario() -> None:
-    st.components.v1.html(
+    st.iframe(
         """
         <script>
         const PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -554,7 +554,7 @@ def dialog_adicionar(ano, mes_num):
             cols = st.columns(POR_LINHA)
             for j, hexcor in enumerate(PALETA_CORES[ini:ini + POR_LINHA]):
                 i = ini + j
-                if cols[j].button(" ", key=f"cor_btn_{i}", use_container_width=True,
+                if cols[j].button(" ", key=f"cor_btn_{i}", width="stretch",
                                   help=hexcor):
                     st.session_state.cor_escolhida = hexcor
                     st.session_state.cor_tom = hexcor
@@ -652,12 +652,12 @@ if PODE_EDITAR or EH_ADMIN:
     if PODE_EDITAR:
         with _bt1:
             if st.button("➕ Adicionar nova ação", type="primary",
-                         use_container_width=True):
+                         width="stretch"):
                 dialog_adicionar(ano, mes_num)
     if EH_ADMIN:
         with _bt2:
             if st.button("👥 Gerenciar Usuários", key="btn_gerenciar",
-                         use_container_width=True):
+                         width="stretch"):
                 auth.dialog_gerenciar_usuarios()
     # Deixa o botão "Gerenciar Usuários" verde (o de adicionar continua vermelho).
     st.markdown(
@@ -1242,17 +1242,17 @@ _cfg_cal = {
 with st.container(key="cal_scroll"):
     with st.container(key="cal_head_box"):
         st.plotly_chart(
-            fig_head, use_container_width=True, config=_cfg_cal,
+            fig_head, width="stretch", config=_cfg_cal,
             key="grafico_cabecalho",
         )
         # A faixa fixa "DESTAQUE DA COMUNICAÇÃO", logo abaixo das datas (não rola).
         st.plotly_chart(
-            fig_destaque, use_container_width=True, config=_cfg_cal,
+            fig_destaque, width="stretch", config=_cfg_cal,
             key="grafico_destaque",
         )
     with st.container(key="cal_box"):
         st.plotly_chart(
-            fig, use_container_width=True, config=_cfg_cal, key="grafico_corpo",
+            fig, width="stretch", config=_cfg_cal, key="grafico_corpo",
         )
 
 
@@ -1326,7 +1326,7 @@ with st.expander(_titulo_painel, expanded=False):
         editor_df,
         num_rows="fixed",  # sem a seleção embutida do Streamlit (usamos a coluna "Excluir")
         disabled=not PODE_EDITAR,  # leitor: tabela só leitura (não altera nada)
-        use_container_width=True,
+        width="stretch",
         column_order=["Excluir", "Ação", "Categoria", "Início", "Fim", "🎨", "Cor", "Detalhes"],
         column_config={
             "Excluir": st.column_config.CheckboxColumn(

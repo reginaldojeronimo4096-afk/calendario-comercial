@@ -1,4 +1,4 @@
-streamlit>=1.37
+streamlit>=1.56
 plotly>=5.20
 # pandas 3.0 (textos via PyArrow por padrão) causou "Segmentation fault" no
 # Streamlit Cloud ao desenhar o calendário (trocar de mês). Travado no 2.x, que é
