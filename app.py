@@ -157,6 +157,20 @@ st.markdown(
       .block-container { padding-top: 0.5rem; padding-bottom: 2.5rem; }
       /* Título do calendário numa linha só, mesmo com "Dezembro" */
       h1 { font-size: 2.1rem !important; white-space: nowrap; }
+      /* Botões de NAVEGAÇÃO (Promoções / Voltar): azul + negrito, mais visíveis. */
+      .st-key-btn_promocoes button, .st-key-voltar_calendario button,
+      .st-key-voltar_prom button {
+        font-weight: 700 !important; color: #155FA0 !important;
+        background: #EAF2FB !important; border: 1px solid #1E88E5 !important;
+      }
+      .st-key-btn_promocoes button:hover, .st-key-voltar_calendario button:hover,
+      .st-key-voltar_prom button:hover { background: #D6E8FA !important; }
+      /* Botão SAIR: vermelho suave (deixa claro que é a ação de sair). */
+      .st-key-btn_sair button {
+        font-weight: 700 !important; color: #C0392B !important;
+        background: #FDECEC !important; border: 1px solid #E8463A !important;
+      }
+      .st-key-btn_sair button:hover { background: #FADBD8 !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -222,11 +236,11 @@ EH_ADMIN = PAPEL == "admin"                  # só admin gerencia usuários
 with st.sidebar:
     st.markdown(f"### 👤 {_U.get('nome') or _U['usuario']}")
     st.caption(f"Papel: **{PAPEL}**")
-    if st.button("🚪 Sair", width="stretch"):
+    if st.button("🚪 Sair", key="btn_sair", width="stretch"):
         auth.sair()
     st.divider()
     # Abre a tela de consulta das promoções (Grade de Ativação) — para todos.
-    if st.button("📑 Promoções", width="stretch"):
+    if st.button("📑 Promoções", key="btn_promocoes", width="stretch"):
         st.session_state["_view"] = "promocoes"
         st.session_state.pop("_grade_sel", None)
         st.rerun()
@@ -1235,23 +1249,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ---------------------------------------------------------------------------
-# Marcador de HOJE: linha vertical pontilhada azul na coluna do dia atual, nas
-# TRÊS figuras (cabeçalho, faixa fixa e corpo), para "descer" alinhada. Aparece
-# só quando o mês/ano exibido é o de hoje (senão não há "hoje" naquele mês).
-# ---------------------------------------------------------------------------
-if ano == hoje.year and mes_num == hoje.month:
-    _hoje_x = pd.Timestamp(hoje)
-    _COR_HOJE = "#1E88E5"
-    for _fig_hoje in (fig_destaque, fig):
-        _fig_hoje.add_shape(
-            type="line", xref="x", yref="paper", x0=_hoje_x, x1=_hoje_x, y0=0, y1=1,
-            line=dict(color=_COR_HOJE, width=2, dash="dot"), layer="above",
-        )
-    fig_head.add_shape(
-        type="line", xref="x", yref="paper", x0=_hoje_x, x1=_hoje_x, y0=-0.8, y1=1.0,
-        line=dict(color=_COR_HOJE, width=2, dash="dot"), layer="above",
-    )
+# O destaque do dia de HOJE fica só no rótulo da data (azul + negrito, em
+# _rotulo_dia). A linha vertical foi removida a pedido — ficou mais limpo.
 
 _cfg_cal = {
     "displayModeBar": False,      # esconde a barra de ferramentas (canto sup. dir.)
