@@ -418,61 +418,20 @@ if "ciclos_df" not in st.session_state:
 # Cabeçalho
 # ----------------------------------------------------------------------------
 hoje = date.today()
-
-# Mês e Ano ficam no session_state para os botões − + do mês poderem mexer neles
-# (inclusive "virar" o ano ao passar de Dez p/ Jan). O callback roda ANTES dos
-# widgets, então pode alterar as chaves 'mes_sel'/'ano_sel' com segurança.
-st.session_state.setdefault("mes_sel", hoje.month)
-st.session_state.setdefault("ano_sel", hoje.year)
-
-
-def _passo_mes(delta: int) -> None:
-    m = st.session_state.mes_sel + delta
-    a = st.session_state.ano_sel
-    if m < 1:            # antes de Janeiro -> Dezembro do ano anterior
-        m, a = 12, a - 1
-    elif m > 12:         # depois de Dezembro -> Janeiro do ano seguinte
-        m, a = 1, a + 1
-    if 2024 <= a <= 2032:  # respeita os limites do campo Ano
-        st.session_state.mes_sel = m
-        st.session_state.ano_sel = a
-
-
-col_titulo, col_mes, col_ano = st.columns([7, 2, 1])
+col_titulo, col_mes, col_ano = st.columns([7, 1, 1])
 with col_mes:
-    # selectbox (com a setinha que abre TODOS os meses) + botões − e + ao lado,
-    # alinhados por baixo p/ casar com a altura do campo. Colunas dos botões
-    # estreitas (0.6) p/ eles ficarem pequenos e discretos, colados no campo.
-    cm_sel, cm_menos, cm_mais = st.columns([2.6, 0.6, 0.6], vertical_alignment="bottom")
-    with cm_sel:
-        mes_num = st.selectbox(
-            "Mês",
-            options=list(range(1, 13)),
-            format_func=lambda m: MESES_PT[m - 1],
-            key="mes_sel",
-        )
-    with cm_menos:
-        st.button("−", key="mes_menos", on_click=_passo_mes, args=(-1,),
-                  use_container_width=True, help="Mês anterior")
-    with cm_mais:
-        st.button("+", key="mes_mais", on_click=_passo_mes, args=(1,),
-                  use_container_width=True, help="Próximo mês")
+    mes_num = st.selectbox(
+        "Mês",
+        options=list(range(1, 13)),
+        format_func=lambda m: MESES_PT[m - 1],
+        index=hoje.month - 1,
+    )
 with col_ano:
     ano = int(
-        st.number_input("Ano", min_value=2024, max_value=2032, step=1, key="ano_sel")
+        st.number_input("Ano", min_value=2024, max_value=2032, value=hoje.year, step=1)
     )
 with col_titulo:
     st.title(f"📅 Calendário da Grade Comercial de {MESES_PT[mes_num - 1]}")
-
-# Botões − + do mês: pequenos e discretos (menor altura, sem padding lateral).
-st.markdown(
-    "<style>"
-    ".st-key-mes_menos button,.st-key-mes_mais button{"
-    "padding:0 !important;min-height:1.7rem !important;height:1.7rem !important;"
-    "font-size:0.95rem;font-weight:700;line-height:1;}"
-    "</style>",
-    unsafe_allow_html=True,
-)
 
 # Mensagem de feedback que sobrevive ao recarregamento (ex.: após limpar tudo)
 if st.session_state.get("flash"):
