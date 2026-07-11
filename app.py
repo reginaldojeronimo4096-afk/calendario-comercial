@@ -1219,12 +1219,12 @@ st.markdown(
         overflow-y: auto;
         border-bottom: 1px solid #ECECEC;
         border-radius: 0 0 6px 6px;
-        /* PUXADOR do vão abaixo da faixa fixa "DESTAQUE". CUIDADO: valor muito
-           negativo faz o corpo SUBIR POR CIMA da faixa e escondê-la. Vai de leve:
-           se ainda sobrar vão, aumente aos poucos (-14, -20...); se a faixa começar
-           a sumir/cobrir, volte pra menos negativo. */
-        margin-top: -26px;
       }}
+      /* PUXADOR CERTO do vão branco: sobe SÓ o gráfico do corpo DENTRO da caixa
+         (remove o respiro que o Streamlit reserva acima da 1ª faixa), sem cortar a
+         faixa fixa DESTAQUE. DIAL: se ainda sobrar vão, aumente (mais negativo);
+         se cortar o TOPO da faixa PRESENTES, diminua. */
+      .st-key-cal_box [data-testid="stPlotlyChart"] {{ margin-top: -28px !important; }}
     </style>
     """,
     unsafe_allow_html=True,
