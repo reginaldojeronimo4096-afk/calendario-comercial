@@ -1084,12 +1084,12 @@ for idx, (_ci, _cf, _texto) in enumerate(ciclos_visiveis):
     _x1 = min(_cf, borda_dir)
     fig_head.add_shape(
         type="rect", xref="x", yref="paper",
-        x0=_x0, x1=_x1, y0=0.55, y1=1.0,
+        x0=_x0, x1=_x1, y0=0.46, y1=1.0,   # y0 mais baixo = faixa do ciclo mais alta
         fillcolor=cor["fill"], line=dict(color=cor["borda"], width=1),
         layer="above",
     )
     fig_head.add_annotation(
-        x=_x0 + (_x1 - _x0) / 2, y=0.775, xref="x", yref="paper",
+        x=_x0 + (_x1 - _x0) / 2, y=0.73, xref="x", yref="paper",  # centro da faixa nova
         text=f"<b>{_texto}</b>", showarrow=False,
         font=dict(size=12, color=_contraste_texto(cor["fill"])),
         xanchor="center", yanchor="middle",
@@ -1097,7 +1097,7 @@ for idx, (_ci, _cf, _texto) in enumerate(ciclos_visiveis):
 
 # Rótulo fixo "PORTIFÓLIO DO CICLO" à esquerda da faixa amarela.
 fig_head.add_annotation(
-    x=0, y=0.775, xref="paper", yref="paper",
+    x=0, y=0.73, xref="paper", yref="paper",
     text="PORTIFÓLIO<br>DO CICLO", showarrow=False,
     font=dict(size=12, color="#333"),
     xanchor="right", yanchor="middle", align="right", xshift=-8,

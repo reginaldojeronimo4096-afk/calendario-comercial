@@ -103,6 +103,12 @@ def _css_login() -> None:
           /* Esconde o aviso "Press Enter to submit form" que aparece DENTRO do
              campo — o botão "Entrar" já deixa claro o que fazer. */
           .st-key-login_card [data-testid="InputInstructions"] { display: none !important; }
+          /* Fonte um pouco maior dentro dos campos (e-mail e senha). */
+          .st-key-login_card input { font-size: 1.05rem !important; }
+          /* Some com o "olho" NATIVO do navegador (Edge) no campo de senha — o app
+             já tem o próprio botão de mostrar/ocultar, então apareciam DOIS olhos. */
+          .st-key-login_card input::-ms-reveal,
+          .st-key-login_card input::-ms-clear { display: none !important; }
           .login-logo   { text-align:center; font-size:1.7rem; font-weight:800;
                            color:#EE7B30; margin: 0 0 .2rem; letter-spacing:.5px; }
           .login-titulo { text-align:center; font-size:1.35rem; font-weight:800;
