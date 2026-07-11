@@ -170,9 +170,12 @@ st.markdown(
 # Marca a página como pt-BR + 'translate=no' + 'notranslate' e injeta a meta
 # oficial do Google. Só mexe em atributos/meta (não reescreve conteúdo), então
 # NÃO causa o próprio removeChild.
+# NOTA: mantemos `st.components.v1.html` (mesmo deprecado) DE PROPÓSITO — é a
+# ferramenta certa p/ um iframe INVISÍVEL (height=0) que só roda JS. O substituto
+# `st.iframe` é p/ embeds VISÍVEIS e REJEITA height=0 (StreamlitInvalidHeightError).
 # ----------------------------------------------------------------------------
 def _desliga_traducao() -> None:
-    st.iframe(
+    st.components.v1.html(
         """
         <script>
         function noTrans(){
@@ -242,7 +245,7 @@ if st.session_state.get("_view") == "promocoes":
 # dias (por POSIÇÃO) e meses (por nome) em português — resiste à tradução.
 # ----------------------------------------------------------------------------
 def _traduz_calendario() -> None:
-    st.iframe(
+    st.components.v1.html(
         """
         <script>
         const PT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
