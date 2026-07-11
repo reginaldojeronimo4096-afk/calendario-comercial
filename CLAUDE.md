@@ -86,6 +86,15 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
 6. **Exportar Excel** (openpyxl): cabeçalho verde/negrito, bordas, largura automática, datas
    **dd/mm/aaaa**, cabeçalho fixo. NÃO exporta a coluna "Cor" (hex).
 
+## Gotcha crítico: `removeChild` no frontend (Google Tradutor)
+`NotFoundError: Failed to execute 'removeChild' on 'Node'` a CADA clique, no app inteiro =
+**tradução automática do navegador** (Google Tradutor do Chrome) reescrevendo o DOM e brigando
+com o Streamlit. Correção: `_desliga_traducao()` roda ANTES do login (topo do app.py), marca
+`lang=pt-BR` + `translate=no` + classe `notranslate` + `<meta name=google content=notranslate>`
+desde o 1º render. **Só isso não desfaz uma aba JÁ traduzida** — o usuário tem de desligar a
+tradução do site e recarregar. (Investigado: NÃO era o `st.rerun(scope="fragment")` do dialog —
+revertê-lo não resolveu; a causa é a tradução. Os `fragment` foram revertidos mesmo assim.)
+
 ## Preferências do usuário / como iterar
 - Confie na **imagem anotada**, não no termo — ele às vezes troca "largura" e "comprimento".
 - Ajustes de layout em pixels (ex.: `height`) costumam levar 1–2 rodadas; ofereça afinar o número.

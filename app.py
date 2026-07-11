@@ -164,6 +164,42 @@ st.markdown(
 
 
 # ----------------------------------------------------------------------------
+# Desliga a TRADUÇÃO AUTOMÁTICA do navegador (Google Tradutor do Chrome) — desde
+# o 1º render, ANTES do login. Sem isto, o tradutor reescreve o texto da página e
+# briga com o Streamlit, gerando "NotFoundError: removeChild" a CADA clique.
+# Marca a página como pt-BR + 'translate=no' + 'notranslate' e injeta a meta
+# oficial do Google. Só mexe em atributos/meta (não reescreve conteúdo), então
+# NÃO causa o próprio removeChild.
+# ----------------------------------------------------------------------------
+def _desliga_traducao() -> None:
+    st.components.v1.html(
+        """
+        <script>
+        function noTrans(){
+          try{
+            var d = window.parent.document;
+            var h = d.head || d.getElementsByTagName('head')[0];
+            d.documentElement.setAttribute('lang','pt-BR');
+            d.documentElement.setAttribute('translate','no');
+            d.documentElement.classList.add('notranslate');
+            if(h && !d.getElementById('_no_g_trans')){
+              var m = d.createElement('meta');
+              m.id='_no_g_trans'; m.name='google'; m.content='notranslate';
+              h.appendChild(m);
+            }
+          }catch(e){}
+        }
+        noTrans(); setInterval(noTrans, 1000);
+        </script>
+        """,
+        height=0,
+    )
+
+
+_desliga_traducao()
+
+
+# ----------------------------------------------------------------------------
 # Login / controle de acesso (ANTES de tudo do calendário)
 # ----------------------------------------------------------------------------
 # Cria os admins iniciais (se não existirem) e exige login. Enquanto ninguém

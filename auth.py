@@ -384,28 +384,28 @@ def dialog_gerenciar_usuarios() -> None:
             if status == "pendente":
                 if b1.button("✅ Aprovar", key=f"aprovar_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
-                    st.rerun(scope="fragment")
+                    st.rerun()
             elif status == "ativo":
                 if b1.button("💾 Papel", key=f"papel_btn_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"papel": papel_sel})
-                    st.rerun(scope="fragment")
+                    st.rerun()
             elif status == "revogado":
                 if b1.button("♻️ Reativar", key=f"reativar_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
-                    st.rerun(scope="fragment")
+                    st.rerun()
 
             # Revogar (não deixa revogar a própria conta, p/ não se trancar de fora)
             if status != "revogado" and not sou_eu:
                 if b2.button("🚫 Revogar", key=f"revogar_{uid}", use_container_width=True):
                     db.atualizar_usuario(uid, {"status": "revogado"})
-                    st.rerun(scope="fragment")
+                    st.rerun()
 
             # Resetar senha: gera uma temporária e mostra uma vez.
             if st.button("🔑 Resetar senha", key=f"reset_{uid}", use_container_width=True):
                 temp = _secrets.token_urlsafe(6)
                 db.atualizar_usuario(uid, {"senha_hash": _hash(temp)})
                 st.session_state["_senha_temp"] = (u.get("usuario", ""), temp)
-                st.rerun(scope="fragment")
+                st.rerun()
 
             # Remover DE VEZ (diferente de 'revogar': apaga a linha da lista).
             # Pede confirmação e nunca deixa apagar a própria conta (p/ o admin
@@ -418,10 +418,10 @@ def dialog_gerenciar_usuarios() -> None:
                     if r1.button("Sim", key=f"rm_sim_{uid}", use_container_width=True):
                         db.remover_usuario(uid)
                         st.session_state.pop(f"_conf_rm_{uid}", None)
-                        st.rerun(scope="fragment")
+                        st.rerun()
                     if r2.button("Não", key=f"rm_nao_{uid}", use_container_width=True):
                         st.session_state.pop(f"_conf_rm_{uid}", None)
-                        st.rerun(scope="fragment")
+                        st.rerun()
                 elif st.button("🗑️ Remover", key=f"rm_{uid}", use_container_width=True):
                     st.session_state[f"_conf_rm_{uid}"] = True
-                    st.rerun(scope="fragment")
+                    st.rerun()
