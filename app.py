@@ -909,6 +909,7 @@ fig.update_yaxes(
     # DESTAQUE fixo. Invertido (maior embaixo): 1ª faixa no topo, última embaixo. O
     # ±0.06 é só p/ as linhas cinza das bordas não ficarem cortadas na quina.
     range=[n_lanes - 0.5 + 0.06, -0.5 - 0.06],
+    autorange=False,   # ESSENCIAL: sem isto o Plotly ignora o range e recoloca o respiro
     fixedrange=True,
 )
 fig.update_xaxes(
@@ -1100,15 +1101,18 @@ for _tr in fig_destaque.data:
     _c = _tr.marker.color if isinstance(_tr.marker.color, str) else "#2E86DE"
     _tr.textfont = dict(color=_contraste_texto(_c), size=13)
 
-fig_destaque.update_yaxes(title="", showticklabels=False, fixedrange=True)
+fig_destaque.update_yaxes(
+    title="", showticklabels=False, fixedrange=True,
+    range=[0.5, -0.5], autorange=False,   # a única faixa preenche toda a altura, sem vão
+)
 fig_destaque.update_xaxes(
     title="", showgrid=False, showticklabels=False,
     range=[borda_esq, borda_dir], fixedrange=True,
 )
 fig_destaque.update_layout(
     showlegend=False,
-    height=58,                                   # ~46px de barra (igual às do corpo)
-    margin=dict(l=120, r=10, t=6, b=6),          # MESMO l/r -> colunas alinhadas
+    height=50,                                   # ~46px de barra (igual às do corpo)
+    margin=dict(l=120, r=10, t=2, b=2),          # MESMO l/r -> colunas alinhadas
     bargap=0,
     dragmode=False,
     paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
