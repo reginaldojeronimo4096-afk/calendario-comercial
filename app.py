@@ -1186,6 +1186,10 @@ st.markdown(
         overflow-y: auto;
         border-bottom: 1px solid #ECECEC;
         border-radius: 0 0 6px 6px;
+        /* PUXADOR do vão branco abaixo da faixa fixa "DESTAQUE". Sobe o corpo até
+           encostar (sobra só a linha fininha fixa). Mais negativo = fecha mais;
+           se as faixas COLAREM/sobrepuserem, deixe menos negativo (ex.: -30px). */
+        margin-top: -44px;
       }}
     </style>
     """,
