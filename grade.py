@@ -39,9 +39,11 @@ _ROTULOS = {
 # Leitura da planilha
 # ---------------------------------------------------------------------------
 def _tipo_amigavel(nome: str) -> str:
-    """'LISTA_20.5_MEIO_AMBIENTE' -> 'Meio Ambiente'."""
-    s = re.sub(r"^LISTA_\d+(\.\d+)?_?", "", nome).replace("_", " ").strip()
-    return s.title() if s else nome
+    """Nome COMPLETO da aba (mantém o prefixo 'LISTA_xx', a pedido), só trocando
+    '_' por espaço p/ ficar mais legível.
+    Ex.: 'LISTA_20.5_MEIO_AMBIENTE' -> 'LISTA 20.5 MEIO AMBIENTE'.
+    (Antes ele APAGAVA o 'LISTA_xx' e mostrava só 'Meio Ambiente'.)"""
+    return nome.replace("_", " ").strip() if nome else nome
 
 
 def _ciclo_periodo(nome_arq: str):
@@ -190,15 +192,40 @@ def _mostra_lista_promocoes() -> None:
                 + ("Suba uma Grade acima. ☝️" if True else ""))
         return
 
+    # Cabeçalho destacado (Ciclo/período da grade) no espaço acima da busca. Como
+    # as promoções do mesmo upload dividem o ciclo, mostra ele UMA vez, em destaque.
+    _ciclos = sorted({(L.get("ciclo") or "").strip() for L in listas if L.get("ciclo")})
+    _pers = sorted({(L.get("periodo") or "").strip() for L in listas if L.get("periodo")})
+    if len(_ciclos) == 1:
+        _hdr = f"🗂️ Ciclo {_ciclos[0]}" + (
+            f" · {_pers[0]}" if len(_pers) == 1 and _pers[0] else ""
+        )
+    else:
+        _hdr = "🗂️ Grade de Promoções"
+    st.markdown(
+        f"<div style='background:#EAF2FB;border:1px solid #1E88E5;border-radius:8px;"
+        f"padding:0.55rem 0.95rem;margin:0.2rem 0 0.7rem;font-size:1.25rem;"
+        f"font-weight:800;color:#155FA0;'>{_hdr}</div>",
+        unsafe_allow_html=True,
+    )
+
     busca = st.text_input("🔎 Buscar promoção", key="busca_lista").strip().lower()
-    st.caption(f"{len(listas)} promoção(ões) disponível(is):")
+    # "N promoções disponíveis" com fonte maior e destaque (era um caption cinza).
+    st.markdown(
+        f"<div style='font-size:1.05rem;font-weight:700;color:#2A2A3C;"
+        f"margin:0.5rem 0 0.2rem;'>📋 {len(listas)} promoção(ões) disponível(is)</div>",
+        unsafe_allow_html=True,
+    )
     for L in listas:
-        alvo = (str(L.get("tipo", "")) + " " + str(L.get("lista_nome", ""))).lower()
+        alvo = (str(L.get("lista_nome", "")) + " "
+                + _tipo_amigavel(L.get("lista_nome", ""))).lower()
         if busca and busca not in alvo:
             continue
         c1, c2, c3 = st.columns([5, 2, 1.4])
         with c1:
-            st.markdown(f"**{L.get('tipo') or L.get('lista_nome')}**")
+            # Nome COMPLETO da aba (com LISTA_xx), calculado do lista_nome — assim
+            # já aparece certo nas listas atuais, sem precisar re-subir a grade.
+            st.markdown(f"**{_tipo_amigavel(L['lista_nome'])}**")
             st.caption(
                 f"Ciclo {L.get('ciclo') or '—'} · {L.get('periodo') or 'período —'}"
                 + (f" · {L.get('link_lp')}" if L.get("link_lp") else "")
@@ -217,7 +244,7 @@ def _mostra_produtos(lista_nome: str) -> None:
 
     L = next((x for x in db.grade_listar_listas() if x["lista_nome"] == lista_nome), None)
     if L:
-        st.subheader(L.get("tipo") or lista_nome)
+        st.subheader(_tipo_amigavel(lista_nome))
         st.caption(
             f"**{L.get('total_skus', 0)} produtos** · Ciclo {L.get('ciclo') or '—'} · "
             f"{L.get('periodo') or 'período —'} · Cupom {_pct(L.get('cupom'))} · "
@@ -241,7 +268,7 @@ def _mostra_produtos(lista_nome: str) -> None:
         df = df[m]
 
     st.dataframe(df, width="stretch", hide_index=True)
-    _nome_arq = (L.get("tipo") if L else lista_nome) or "promocao"
+    _nome_arq = _tipo_amigavel(lista_nome) or "promocao"
     _c_csv, _c_xls, _ = st.columns([1, 1, 3])
     with _c_csv:
         st.download_button(
