@@ -155,8 +155,9 @@ st.markdown(
          da barra do navegador (sobrava só as datas). Mantido pequeno (2.5rem) para
          dar um respiro no rodapé SEM voltar aquele problema de rolar demais. */
       .block-container { padding-top: 0.5rem; padding-bottom: 2.5rem; }
-      /* Título do calendário numa linha só, mesmo com "Dezembro" */
-      h1 { font-size: 2.1rem !important; white-space: nowrap; }
+      /* Título do calendário numa linha só, mesmo com "Dezembro" (fonte um tico
+         menor p/ caber junto com os botões maiores, inclusive com sidebar aberta) */
+      h1 { font-size: 1.9rem !important; white-space: nowrap; }
       /* Botões de NAVEGAÇÃO (Promoções / Voltar): azul + negrito, mais visíveis. */
       .st-key-btn_promocoes button, .st-key-voltar_calendario button,
       .st-key-voltar_prom button {
@@ -171,15 +172,25 @@ st.markdown(
         background: #FDECEC !important; border: 1px solid #E8463A !important;
       }
       .st-key-btn_sair button:hover { background: #FADBD8 !important; }
-      /* Botões de DOWNLOAD (CSV / Excel / Excel das Promoções): verde + negrito. */
+      /* Botões de DOWNLOAD (CSV / Excel — calendário E Promoções): verde + negrito. */
       .st-key-dl_csv button, .st-key-dl_excel button,
-      .st-key-dl_excel_grade button {
+      .st-key-dl_csv_grade button, .st-key-dl_excel_grade button {
         font-weight: 700 !important; color: #1B7A32 !important;
         background: #E9F7EF !important; border: 1px solid #21A038 !important;
       }
       .st-key-dl_csv button:hover, .st-key-dl_excel button:hover,
-      .st-key-dl_excel_grade button:hover {
+      .st-key-dl_csv_grade button:hover, .st-key-dl_excel_grade button:hover {
         background: #D6F0E0 !important;
+      }
+      /* Botão de UPLOAD (subir a Grade): laranja Natura + negrito (é "trazer p/ dentro"). */
+      [data-testid="stFileUploader"] button {
+        font-weight: 700 !important; color: #C15A12 !important;
+        background: #FFF3E8 !important; border: 1px solid #EE7B30 !important;
+      }
+      [data-testid="stFileUploader"] button:hover { background: #FCE6D2 !important; }
+      /* Botões do TOPO (Adicionar / Usuários): não quebrar o texto em 2 linhas. */
+      .st-key-btn_add button, .st-key-btn_gerenciar button {
+        white-space: nowrap !important;
       }
       /* Limpar calendário (destrutivo): vermelho, mesmo tom do Sair (aviso). */
       .st-key-btn_limpar button {
@@ -481,12 +492,12 @@ hoje = date.today()
 # depois dessa definição.
 _specs = [7]
 if PODE_EDITAR:
-    _specs.append(1.4)   # Adicionar ação
+    _specs.append(1.8)   # Adicionar ação (mais largo: não quebra com sidebar aberta)
 if EH_ADMIN:
-    _specs.append(1.4)   # Usuários
+    _specs.append(1.8)   # Usuários
 if PODE_EDITAR or EH_ADMIN:
     _specs.append(0.3)   # respiro entre os botões e o Mês (não colar no Mês)
-_specs += [1.0, 1.0]     # Mês, Ano  (total ~igual ao anterior: título intacto)
+_specs += [1.0, 1.0]     # Mês, Ano
 _cols_topo = st.columns(_specs, vertical_alignment="bottom")
 col_titulo = _cols_topo[0]
 _k = 1
@@ -516,7 +527,7 @@ with col_titulo:
     st.title(f"📅 Calendário da Grade Comercial de {MESES_PT[mes_num - 1]}")
 if col_add is not None:
     with col_add:
-        if st.button("➕ Adicionar ação", type="primary", width="stretch"):
+        if st.button("➕ Adicionar ação", key="btn_add", type="primary", width="stretch"):
             st.session_state["_abrir_add"] = True   # abre o pop-up (definido abaixo)
 if col_ger is not None:
     with col_ger:

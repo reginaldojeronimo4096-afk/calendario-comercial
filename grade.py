@@ -241,10 +241,22 @@ def _mostra_produtos(lista_nome: str) -> None:
         df = df[m]
 
     st.dataframe(df, width="stretch", hide_index=True)
-    st.download_button(
-        "⬇️ Baixar Excel",
-        data=_excel_bytes(df),
-        file_name=f"{(L.get('tipo') if L else lista_nome) or 'promocao'}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key="dl_excel_grade",
-    )
+    _nome_arq = (L.get("tipo") if L else lista_nome) or "promocao"
+    _c_csv, _c_xls, _ = st.columns([1, 1, 3])
+    with _c_csv:
+        st.download_button(
+            "⬇️ Baixar CSV",
+            data=df.to_csv(index=False).encode("utf-8-sig"),
+            file_name=f"{_nome_arq}.csv",
+            mime="text/csv",
+            key="dl_csv_grade",
+            help="Abre no Google Sheets (Arquivo → Importar) e em qualquer planilha.",
+        )
+    with _c_xls:
+        st.download_button(
+            "⬇️ Baixar Excel",
+            data=_excel_bytes(df),
+            file_name=f"{_nome_arq}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_excel_grade",
+        )
