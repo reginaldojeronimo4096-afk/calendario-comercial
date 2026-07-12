@@ -466,13 +466,37 @@ if "ciclos_df" not in st.session_state:
 # Cabeçalho
 # ----------------------------------------------------------------------------
 hoje = date.today()
-col_titulo, col_mes, col_ano = st.columns([7, 1, 1])
+
+# Topo em UMA linha: título + (Adicionar) + (Usuários) + Mês + Ano — sobe o
+# calendário (uma faixa a menos). As colunas dos botões só existem conforme o
+# papel, então o LEITOR (sem botões) fica com todo o espaço p/ o título.
+# vertical_alignment="bottom": tudo assenta na mesma base. O "Adicionar" só marca
+# um flag (o pop-up dialog_adicionar é definido MAIS ABAIXO); o flag é consumido
+# depois dessa definição.
+_specs = [7]
+if PODE_EDITAR:
+    _specs.append(1.5)   # Adicionar ação
+if EH_ADMIN:
+    _specs.append(1.5)   # Usuários
+_specs += [1.05, 1.05]   # Mês, Ano
+_cols_topo = st.columns(_specs, vertical_alignment="bottom")
+col_titulo = _cols_topo[0]
+_k = 1
+if PODE_EDITAR:
+    col_add = _cols_topo[_k]; _k += 1
+else:
+    col_add = None
+if EH_ADMIN:
+    col_ger = _cols_topo[_k]; _k += 1
+else:
+    col_ger = None
+col_mes = _cols_topo[_k]; _k += 1
+col_ano = _cols_topo[_k]
+
 with col_mes:
     mes_num = st.selectbox(
-        "Mês",
-        options=list(range(1, 13)),
-        format_func=lambda m: MESES_PT[m - 1],
-        index=hoje.month - 1,
+        "Mês", options=list(range(1, 13)),
+        format_func=lambda m: MESES_PT[m - 1], index=hoje.month - 1,
     )
 with col_ano:
     ano = int(
@@ -480,6 +504,22 @@ with col_ano:
     )
 with col_titulo:
     st.title(f"📅 Calendário da Grade Comercial de {MESES_PT[mes_num - 1]}")
+if col_add is not None:
+    with col_add:
+        if st.button("➕ Adicionar ação", type="primary", width="stretch"):
+            st.session_state["_abrir_add"] = True   # abre o pop-up (definido abaixo)
+if col_ger is not None:
+    with col_ger:
+        if st.button("👥 Usuários", key="btn_gerenciar", width="stretch"):
+            auth.dialog_gerenciar_usuarios()
+# Botão "Usuários" verde (o de adicionar continua vermelho/primary).
+if EH_ADMIN:
+    st.markdown(
+        "<style>.st-key-btn_gerenciar button{background:#21A038!important;"
+        "border:0!important;color:#fff!important;font-weight:700!important;}"
+        ".st-key-btn_gerenciar button:hover{background:#1B8730!important;}</style>",
+        unsafe_allow_html=True,
+    )
 
 # Mensagem de feedback que sobrevive ao recarregamento (ex.: após limpar tudo)
 if st.session_state.get("flash"):
@@ -688,32 +728,13 @@ def dialog_adicionar(ano, mes_num):
 
 
 # ----------------------------------------------------------------------------
-# Botão que abre o pop-up "Adicionar nova ação"
+# Abre o pop-up "Adicionar nova ação" se o botão do TOPO foi clicado.
 # ----------------------------------------------------------------------------
-# O formulário agora vive na função de diálogo definida acima; aqui fica só o
-# botão que o abre. Fica logo abaixo do título e ACIMA do calendário, para o
-# calendário ocupar o topo da página (menos rolagem até ele).
-# Botões conforme o papel: admin/editor veem "Adicionar"; só admin vê "Gerenciar
-# Usuários" (botão verde). Leitor não vê nenhum dos dois (só olha o calendário).
-if PODE_EDITAR or EH_ADMIN:
-    _bt1, _bt2, _bt3 = st.columns([2, 2, 6])
-    if PODE_EDITAR:
-        with _bt1:
-            if st.button("➕ Adicionar nova ação", type="primary",
-                         width="stretch"):
-                dialog_adicionar(ano, mes_num)
-    if EH_ADMIN:
-        with _bt2:
-            if st.button("👥 Gerenciar Usuários", key="btn_gerenciar",
-                         width="stretch"):
-                auth.dialog_gerenciar_usuarios()
-    # Deixa o botão "Gerenciar Usuários" verde (o de adicionar continua vermelho).
-    st.markdown(
-        "<style>.st-key-btn_gerenciar button{background:#21A038!important;"
-        "border:0!important;color:#fff!important;font-weight:700!important;}"
-        ".st-key-btn_gerenciar button:hover{background:#1B8730!important;}</style>",
-        unsafe_allow_html=True,
-    )
+# O botão fica no cabeçalho (lá em cima), mas o pop-up (dialog_adicionar) é
+# definido acima desta linha — então o botão só marca o flag "_abrir_add" e aqui,
+# já com a função disponível, abrimos o diálogo.
+if PODE_EDITAR and st.session_state.pop("_abrir_add", False):
+    dialog_adicionar(ano, mes_num)
 
 
 # ----------------------------------------------------------------------------
@@ -737,7 +758,8 @@ else:
 # ----------------------------------------------------------------------------
 # Gráfico: linha do tempo (timeline / Gantt)
 # ----------------------------------------------------------------------------
-st.subheader("🗓️ Calendário")
+# (Subtítulo "🗓️ Calendário" removido — era redundante com o título do topo;
+# assim o calendário sobe uma faixa.)
 
 # Mês sem ações: mostra a grade vazia do mês (bloco transparente "fantasma"),
 # em vez de erro, e avisa que ainda não há ações.
