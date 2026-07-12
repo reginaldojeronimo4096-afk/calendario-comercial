@@ -171,12 +171,14 @@ st.markdown(
         background: #FDECEC !important; border: 1px solid #E8463A !important;
       }
       .st-key-btn_sair button:hover { background: #FADBD8 !important; }
-      /* Botões de DOWNLOAD (CSV / Excel): verde + negrito (é "baixar dados"). */
-      .st-key-dl_csv button, .st-key-dl_excel button {
+      /* Botões de DOWNLOAD (CSV / Excel / Excel das Promoções): verde + negrito. */
+      .st-key-dl_csv button, .st-key-dl_excel button,
+      .st-key-dl_excel_grade button {
         font-weight: 700 !important; color: #1B7A32 !important;
         background: #E9F7EF !important; border: 1px solid #21A038 !important;
       }
-      .st-key-dl_csv button:hover, .st-key-dl_excel button:hover {
+      .st-key-dl_csv button:hover, .st-key-dl_excel button:hover,
+      .st-key-dl_excel_grade button:hover {
         background: #D6F0E0 !important;
       }
       /* Limpar calendário (destrutivo): vermelho, mesmo tom do Sair (aviso). */
@@ -192,13 +194,17 @@ st.markdown(
       }
       [data-testid="stExpander"] summary:hover { background: #E6EAF1 !important; }
       /* Botão de ABRIR a barra lateral (» quando ela está fechada): caixinha com
-         borda azul + sombra, p/ não ficar "perdido" no canto. */
+         borda azul + sombra, p/ não ficar "perdido" no canto. Aplico no PRÓPRIO
+         elemento (o container) e no button interno — antes só o hover pegava,
+         porque o container é que carrega o estilo, não um <button> aninhado. */
+      [data-testid="stSidebarCollapsedControl"],
       [data-testid="stSidebarCollapsedControl"] button {
         background: #EAF2FB !important;
         border: 1px solid #1E88E5 !important;
         border-radius: 8px !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
       }
+      [data-testid="stSidebarCollapsedControl"]:hover,
       [data-testid="stSidebarCollapsedControl"] button:hover {
         background: #D6E8FA !important;
       }
@@ -475,10 +481,12 @@ hoje = date.today()
 # depois dessa definição.
 _specs = [7]
 if PODE_EDITAR:
-    _specs.append(1.5)   # Adicionar ação
+    _specs.append(1.4)   # Adicionar ação
 if EH_ADMIN:
-    _specs.append(1.5)   # Usuários
-_specs += [1.05, 1.05]   # Mês, Ano
+    _specs.append(1.4)   # Usuários
+if PODE_EDITAR or EH_ADMIN:
+    _specs.append(0.3)   # respiro entre os botões e o Mês (não colar no Mês)
+_specs += [1.0, 1.0]     # Mês, Ano  (total ~igual ao anterior: título intacto)
 _cols_topo = st.columns(_specs, vertical_alignment="bottom")
 col_titulo = _cols_topo[0]
 _k = 1
@@ -490,6 +498,8 @@ if EH_ADMIN:
     col_ger = _cols_topo[_k]; _k += 1
 else:
     col_ger = None
+if PODE_EDITAR or EH_ADMIN:
+    _k += 1   # pula a coluna espaçadora (fica vazia, só dá o respiro)
 col_mes = _cols_topo[_k]; _k += 1
 col_ano = _cols_topo[_k]
 

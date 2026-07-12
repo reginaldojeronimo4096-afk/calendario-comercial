@@ -246,4 +246,5 @@ def _mostra_produtos(lista_nome: str) -> None:
         data=_excel_bytes(df),
         file_name=f"{(L.get('tipo') if L else lista_nome) or 'promocao'}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="dl_excel_grade",
     )
