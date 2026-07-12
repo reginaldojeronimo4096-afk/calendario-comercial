@@ -202,20 +202,19 @@ def _mostra_lista_promocoes() -> None:
         )
     else:
         _hdr = "🗂️ Grade de Promoções"
+    # Cabeçalho: Ciclo à ESQUERDA + contagem de promoções à DIREITA, na MESMA faixa
+    # azul (flex space-between). No celular, quebra em 2 linhas (flex-wrap).
     st.markdown(
         f"<div style='background:#EAF2FB;border:1px solid #1E88E5;border-radius:8px;"
-        f"padding:0.55rem 0.95rem;margin:0.2rem 0 0.7rem;font-size:1.25rem;"
-        f"font-weight:800;color:#155FA0;'>{_hdr}</div>",
+        f"padding:0.55rem 0.95rem;margin:0.2rem 0 0.7rem;display:flex;"
+        f"justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;'>"
+        f"<span style='font-size:1.25rem;font-weight:800;color:#155FA0;'>{_hdr}</span>"
+        f"<span style='font-size:1.05rem;font-weight:700;color:#155FA0;'>"
+        f"📋 {len(listas)} promoção(ões) disponível(is)</span></div>",
         unsafe_allow_html=True,
     )
 
     busca = st.text_input("🔎 Buscar promoção", key="busca_lista").strip().lower()
-    # "N promoções disponíveis" com fonte maior e destaque (era um caption cinza).
-    st.markdown(
-        f"<div style='font-size:1.05rem;font-weight:700;color:#2A2A3C;"
-        f"margin:0.5rem 0 0.2rem;'>📋 {len(listas)} promoção(ões) disponível(is)</div>",
-        unsafe_allow_html=True,
-    )
     for L in listas:
         alvo = (str(L.get("lista_nome", "")) + " "
                 + _tipo_amigavel(L.get("lista_nome", ""))).lower()
