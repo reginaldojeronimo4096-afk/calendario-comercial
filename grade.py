@@ -244,11 +244,19 @@ def _mostra_produtos(lista_nome: str) -> None:
     L = next((x for x in db.grade_listar_listas() if x["lista_nome"] == lista_nome), None)
     if L:
         st.subheader(_tipo_amigavel(lista_nome))
-        st.caption(
-            f"**{L.get('total_skus', 0)} produtos** · Ciclo {L.get('ciclo') or '—'} · "
+        # Descrição em faixa destacada (fonte maior + texto escuro + barra azul),
+        # em vez do caption cinza pequeno de antes.
+        _info = (
+            f"<b>{L.get('total_skus', 0)} produtos</b> · Ciclo {L.get('ciclo') or '—'} · "
             f"{L.get('periodo') or 'período —'} · Cupom {_pct(L.get('cupom'))} · "
             f"Depor {_pct(L.get('depor'))}"
             + (f" · Página: {L.get('link_lp')}" if L.get("link_lp") else "")
+        )
+        st.markdown(
+            f"<div style='background:#F0F2F6;border-left:4px solid #1E88E5;"
+            f"border-radius:6px;padding:0.5rem 0.9rem;margin:0.1rem 0 0.7rem;"
+            f"font-size:1.02rem;color:#2A2A3C;'>{_info}</div>",
+            unsafe_allow_html=True,
         )
 
     produtos = db.grade_listar_produtos(lista_nome)
