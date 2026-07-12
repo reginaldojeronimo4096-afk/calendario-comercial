@@ -88,6 +88,11 @@ def _periodo_acao(b1, c1) -> str:
     return ini or fim or ""
 
 
+def _ciclo_curto(c: str) -> str:
+    """Tira o 'CL' do ciclo p/ exibir mais limpo: 'CL_09_2026' -> '09_2026'."""
+    return re.sub(r"^CL[_ ]?", "", (c or "").strip())
+
+
 def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
     """Lê o arquivo e devolve [(meta, produtos), ...] das abas LISTA_ visíveis."""
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
@@ -218,7 +223,7 @@ def _mostra_lista_promocoes() -> None:
     _ciclos = sorted({(L.get("ciclo") or "").strip() for L in listas if L.get("ciclo")})
     _pers = sorted({(L.get("periodo") or "").strip() for L in listas if L.get("periodo")})
     if len(_ciclos) == 1:
-        _hdr = f"🗂️ Ciclo {_ciclos[0]}" + (
+        _hdr = f"🗂️ Ciclo {_ciclo_curto(_ciclos[0])}" + (
             f" · {_pers[0]}" if len(_pers) == 1 and _pers[0] else ""
         )
     else:
@@ -231,7 +236,7 @@ def _mostra_lista_promocoes() -> None:
         f"justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;'>"
         f"<span style='font-size:1.25rem;font-weight:800;color:#155FA0;'>{_hdr}</span>"
         f"<span style='font-size:1.05rem;font-weight:700;color:#155FA0;'>"
-        f"📋 {len(listas)} promoção(ões) disponível(is)</span></div>",
+        f"📋 {len(listas)} ações disponíveis</span></div>",
         unsafe_allow_html=True,
     )
 
@@ -241,7 +246,7 @@ def _mostra_lista_promocoes() -> None:
                 + _tipo_amigavel(L.get("lista_nome", ""))).lower()
         if busca and busca not in alvo:
             continue
-        c1, c2, c3 = st.columns([5, 2, 1.4])
+        c1, c2, c3 = st.columns([3, 2, 1.4])   # nome mais estreito: menos espaço vazio
         with c1:
             # Nome COMPLETO da aba (com LISTA_xx), calculado do lista_nome — assim
             # já aparece certo nas listas atuais, sem precisar re-subir a grade.
