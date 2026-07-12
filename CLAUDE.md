@@ -96,13 +96,15 @@ ficarem sempre visíveis. Ícone é `data-testid="stIconMaterial"` (Material Sym
 o `»` recebe o texto "Painel Lateral" via `::after`. (Classes `st-emotion-cache-*` mudam a
 cada build — NUNCA mirar nelas; use os `data-testid`.)
 
-## Gotcha crítico: `Segmentation fault` no Streamlit Cloud (pandas 3.0)
-Se o app cair com `211 Segmentation fault` nos logs (não é exceção Python — é crash de
-lib nativa) ao interagir (ex.: trocar de mês), a causa foi o **pandas 3.0** (textos via
-PyArrow por padrão) brigando com plotly/streamlit na serialização. Correção: **fixar
-`pandas>=2.0,<3.0`** no requirements.txt. Mudar requirements = redeploy REINSTALA deps
-(mais lento, ~2-4 min; um "Reboot" simples pode não reinstalar). O `>=` sem teto pega
-sempre a versão mais nova a cada redeploy — cuidado com major novas.
+## Gotcha crítico: `Segmentation fault` no Streamlit Cloud (versões de libs)
+`Segmentation fault` nos logs (não é exceção Python — é crash de lib nativa) ao interagir
+= conflito de versão de biblioteca. **Rodou em Python 3.14 no Cloud.** Dois gatilhos já
+vistos: (1) **pandas 3.0** (textos PyArrow) → fixado `pandas>=2.0,<3.0`; (2) **streamlit
+1.59.1** → fixado `streamlit>=1.56,<1.59` (a 1.58.x roda estável). REGRA: qualquer mudança
+no requirements.txt REINSTALA tudo e pega as versões MAIS NOVAS de tudo que está com `>=`
+sem teto — e uma major/minor nova pode ressuscitar o segfault. Se voltar, olhe no log qual
+versão "novinha" apareceu (`Found X version Y`) e trave abaixo dela. Reboot simples NÃO
+resolve (precisa reinstalar). numpy NÃO dá p/ travar <2 (Python 3.14 exige numpy 2.x).
 
 ## Gotcha crítico: `removeChild` no frontend (Google Tradutor)
 `NotFoundError: Failed to execute 'removeChild' on 'Node'` a CADA clique, no app inteiro =

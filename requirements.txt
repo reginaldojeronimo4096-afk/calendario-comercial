@@ -1,4 +1,6 @@
-streamlit>=1.56
+# Travado abaixo da 1.59: a 1.59.1 trouxe de volta o "Segmentation fault" no
+# Streamlit Cloud (conflito de libs nativas). A linha 1.58.x roda estável.
+streamlit>=1.56,<1.59
 plotly>=5.20
 # pandas 3.0 (textos via PyArrow por padrão) causou "Segmentation fault" no
 # Streamlit Cloud ao desenhar o calendário (trocar de mês). Travado no 2.x, que é
