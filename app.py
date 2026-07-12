@@ -215,10 +215,22 @@ st.markdown(
         border: 1px solid #1E88E5 !important;
         border-radius: 8px !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
+        opacity: 1 !important;          /* SEMPRE visível (não só ao passar o mouse) */
+        visibility: visible !important;
       }
       [data-testid*="idebarCollaps"]:hover,
       [data-testid*="idebarCollaps"] button:hover {
         background: #D6E8FA !important;
+      }
+      /* Botão de ABRIR (barra fechada): vira um botão com o texto "Painel Lateral"
+         ao lado do », p/ ficar claro o que ele faz (ideia do Hudson). */
+      [data-testid="stSidebarCollapsedControl"] button {
+        width: auto !important; padding: 6px 12px !important;
+      }
+      [data-testid="stSidebarCollapsedControl"] button::after {
+        content: "Painel Lateral";
+        font-weight: 700; font-size: 0.85rem; color: #155FA0;
+        margin-left: 6px; white-space: nowrap;
       }
     </style>
     """,
