@@ -161,67 +161,8 @@ def _excel_bytes(df: pd.DataFrame) -> bytes:
     return buffer.getvalue()
 
 
-def _painel_apagar_promocoes() -> None:
-    """Expander (admin) p/ APAGAR promoções: por seleção OU todas, com confirmação."""
-    with st.expander("🗑️ Apagar promoções", expanded=False):
-        _listas = db.grade_listar_listas()
-        if not _listas:
-            st.caption("Não há promoções para apagar.")
-            return
-        # nome amigável (mostrado) -> lista_nome (chave real no banco)
-        _map = {_tipo_amigavel(x["lista_nome"]): x["lista_nome"] for x in _listas}
-        _opts = sorted(_map.keys())
-        # Tira da seleção itens que já não existem (evita erro do multiselect após apagar).
-        if "apagar_sel" in st.session_state:
-            st.session_state.apagar_sel = [s for s in st.session_state.apagar_sel if s in _opts]
-        st.caption("Selecione promoções para apagar, ou apague TODAS de uma vez. "
-                   "⚠️ Apagar não tem como desfazer.")
-        _sel = st.multiselect(
-            "Promoções para apagar (uma ou várias):", options=_opts, key="apagar_sel",
-        )
-        cA, cB = st.columns(2)
-        # ---- Apagar SELECIONADAS (com confirmação) ----
-        with cA:
-            if st.session_state.get("_conf_ap_sel"):
-                st.warning(f"Apagar {len(_sel)} selecionada(s)?")
-                if st.button("✅ Sim, apagar", key="ap_sel_sim", type="primary",
-                             width="stretch"):
-                    for _d in _sel:
-                        db.grade_apagar_lista(_map[_d])
-                    st.session_state.pop("_conf_ap_sel", None)
-                    st.session_state.pop("_grade_sel", None)
-                    st.session_state["_flash_grade"] = f"{len(_sel)} promoção(ões) apagada(s)!"
-                    st.rerun()
-                if st.button("Cancelar", key="ap_sel_nao", width="stretch"):
-                    st.session_state.pop("_conf_ap_sel", None)
-                    st.rerun()
-            elif st.button("🗑️ Apagar selecionadas", key="btn_ap_sel",
-                           disabled=not _sel, width="stretch"):
-                st.session_state["_conf_ap_sel"] = True
-                st.rerun()
-        # ---- Apagar TODAS (com confirmação) ----
-        with cB:
-            if st.session_state.get("_conf_ap_todas"):
-                st.warning(f"Apagar TODAS as {len(_listas)} promoções?")
-                if st.button("✅ Sim, apagar todas", key="ap_all_sim", type="primary",
-                             width="stretch"):
-                    db.grade_apagar_todas()
-                    st.session_state.pop("_conf_ap_todas", None)
-                    st.session_state.pop("_grade_sel", None)
-                    st.session_state["_flash_grade"] = "Todas as promoções foram apagadas!"
-                    st.rerun()
-                if st.button("Cancelar", key="ap_all_nao", width="stretch"):
-                    st.session_state.pop("_conf_ap_todas", None)
-                    st.rerun()
-            elif st.button("🗑️ Apagar TODAS", key="btn_ap_all", width="stretch"):
-                st.session_state["_conf_ap_todas"] = True
-                st.rerun()
-
-
 def pagina_promocoes(eh_admin: bool = False) -> None:
     st.title("📑 Promoções da Grade")
-    if st.session_state.get("_flash_grade"):     # aviso após apagar (sobrevive ao rerun)
-        st.success(st.session_state.pop("_flash_grade"))
     if st.button("← Voltar ao calendário", key="voltar_calendario"):
         st.session_state.pop("_view", None)
         st.session_state.pop("_grade_sel", None)
@@ -260,9 +201,6 @@ def pagina_promocoes(eh_admin: bool = False) -> None:
                         )
                     else:
                         st.error(f"Não consegui ler o arquivo. Detalhe: {e}")
-
-        # Painel de APAGAR promoções (seleção ou todas) — só admin.
-        _painel_apagar_promocoes()
 
     st.divider()
 

@@ -134,17 +134,3 @@ def grade_listar_produtos(lista_nome: str) -> list:
         .execute()
     )
     return r.data or []
-
-
-def grade_apagar_lista(lista_nome: str) -> None:
-    """Apaga UMA promoção (a lista + os produtos dela)."""
-    c = _cliente()
-    c.table("grade_produtos").delete().eq("lista_nome", lista_nome).execute()
-    c.table("grade_listas").delete().eq("lista_nome", lista_nome).execute()
-
-
-def grade_apagar_todas() -> None:
-    """Apaga TODAS as promoções (todas as listas + todos os produtos)."""
-    c = _cliente()
-    c.table("grade_produtos").delete().gte("id", 0).execute()
-    c.table("grade_listas").delete().gte("id", 0).execute()
