@@ -237,6 +237,8 @@ st.markdown(
          lado (ideia do Hudson) — bem mais claro que uma setinha solta. */
       [data-testid="stExpandSidebarButton"] {
         width: auto !important; padding: 6px 12px !important;
+        position: fixed !important;   /* fixo no topo: não rola com a página */
+        top: 0.5rem !important; left: 0.5rem !important; z-index: 1000000 !important;
       }
       [data-testid="stExpandSidebarButton"]::after {
         content: "Painel Lateral";
