@@ -248,20 +248,27 @@ def _mostra_lista_promocoes() -> None:
             continue
         c1, c2, c3 = st.columns([3, 2, 1.4])   # nome mais estreito: menos espaço vazio
         with c1:
-            # Nome COMPLETO da aba (com LISTA_xx), calculado do lista_nome — assim
-            # já aparece certo nas listas atuais, sem precisar re-subir a grade.
-            st.markdown(f"**{_tipo_amigavel(L['lista_nome'])}**")
-            # Período da AÇÃO (B1/C1) + LP (B2). O ciclo geral já aparece na faixa
-            # azul do topo, então aqui mostramos a info específica desta ação.
-            st.caption(
-                f"🗓️ {L.get('periodo_acao') or 'período —'}"
-                + (f"  ·  🔗 LP: {L.get('link_lp')}" if L.get("link_lp") else "")
+            # Nome + período/LP num ÚNICO bloco, com line-height apertado, p/ a linha
+            # ficar mais BAIXA (compacta). Nome completo calculado do lista_nome (já
+            # vale p/ as listas atuais, sem re-subir a grade). Período = B1/C1; LP = B2.
+            _sub = f"🗓️ {L.get('periodo_acao') or 'período —'}" + (
+                f"  ·  🔗 LP: {L.get('link_lp')}" if L.get("link_lp") else ""
+            )
+            st.markdown(
+                f"<div style='line-height:1.3;'>"
+                f"<span style='font-weight:700;'>{_tipo_amigavel(L['lista_nome'])}</span><br>"
+                f"<span style='color:#8a8a8a;font-size:0.85rem;'>{_sub}</span></div>",
+                unsafe_allow_html=True,
             )
         c2.markdown(f"**{L.get('total_skus', 0)}** SKUs")
         if c3.button("ver ▸", key=f"ver_{L['id']}", width="stretch"):
             st.session_state._grade_sel = L["lista_nome"]
             st.rerun()
-        st.divider()
+        # Divisória FINA (margem pequena) p/ os itens ficarem mais juntos/compactos.
+        st.markdown(
+            "<hr style='margin:0.35rem 0;border:none;border-top:1px solid #ECECEC;'>",
+            unsafe_allow_html=True,
+        )
 
 
 def _mostra_produtos(lista_nome: str) -> None:
