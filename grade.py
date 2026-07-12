@@ -241,6 +241,17 @@ def _mostra_lista_promocoes() -> None:
     )
 
     busca = st.text_input("🔎 Buscar promoção", key="busca_lista").strip().lower()
+
+    # Botões "ver ▸" (um por promoção, key="ver_<id>") com cara melhor: azul cheio +
+    # negrito. Uso [class*='st-key-ver_'] p/ pegar todos de uma vez.
+    st.markdown(
+        "<style>"
+        "[class*='st-key-ver_'] button{background:#1E88E5 !important;border:0 !important;"
+        "color:#fff !important;font-weight:700 !important;border-radius:8px !important;}"
+        "[class*='st-key-ver_'] button:hover{background:#1669BC !important;}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
     for L in listas:
         alvo = (str(L.get("lista_nome", "")) + " "
                 + _tipo_amigavel(L.get("lista_nome", ""))).lower()
