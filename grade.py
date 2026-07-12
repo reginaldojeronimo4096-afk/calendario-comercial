@@ -179,6 +179,19 @@ def _painel_apagar_promocoes() -> None:
         _sel = st.multiselect(
             "Promoções para apagar (uma ou várias):", options=_opts, key="apagar_sel",
         )
+        # Botões de apagar em VERMELHO (ação destrutiva). Quando desabilitado, fica
+        # neutro (o :not(:disabled) evita pintar de vermelho o botão apagado).
+        st.markdown(
+            "<style>"
+            ".st-key-btn_ap_sel button:not(:disabled),"
+            ".st-key-btn_ap_all button:not(:disabled){"
+            "background:#FDECEC !important;border:1px solid #E8463A !important;"
+            "color:#C0392B !important;font-weight:700 !important;}"
+            ".st-key-btn_ap_sel button:not(:disabled):hover,"
+            ".st-key-btn_ap_all button:not(:disabled):hover{background:#FADBD8 !important;}"
+            "</style>",
+            unsafe_allow_html=True,
+        )
         cA, cB = st.columns(2)
         # ---- Apagar SELECIONADAS (com confirmação) ----
         with cA:
@@ -357,8 +370,7 @@ def _mostra_produtos(lista_nome: str) -> None:
         # em vez do caption cinza pequeno de antes.
         _info = (
             f"<b>{L.get('total_skus', 0)} produtos</b> · 🗓️ "
-            f"{L.get('periodo_acao') or 'período —'} · Cupom {_pct(L.get('cupom'))} · "
-            f"Depor {_pct(L.get('depor'))}"
+            f"{L.get('periodo_acao') or 'período —'}"
             + (f" · 🔗 LP: {L.get('link_lp')}" if L.get("link_lp") else "")
         )
         st.markdown(
