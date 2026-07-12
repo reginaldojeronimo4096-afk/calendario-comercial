@@ -246,9 +246,10 @@ def _mostra_lista_promocoes() -> None:
     # negrito. Uso [class*='st-key-ver_'] p/ pegar todos de uma vez.
     st.markdown(
         "<style>"
-        "[class*='st-key-ver_'] button{background:#1E88E5 !important;border:0 !important;"
-        "color:#fff !important;font-weight:700 !important;border-radius:8px !important;}"
-        "[class*='st-key-ver_'] button:hover{background:#1669BC !important;}"
+        "[class*='st-key-ver_'] button{background:#EAF2FB !important;"
+        "border:1px solid #1E88E5 !important;color:#155FA0 !important;"
+        "font-weight:700 !important;border-radius:8px !important;}"
+        "[class*='st-key-ver_'] button:hover{background:#D6E8FA !important;}"
         "</style>",
         unsafe_allow_html=True,
     )
@@ -320,7 +321,18 @@ def _mostra_produtos(lista_nome: str) -> None:
             df["Descrição"].astype(str).str.lower().str.contains(busca, na=False)
         df = df[m]
 
-    st.dataframe(df, width="stretch", hide_index=True)
+    # Exibição: DE/POR com 2 casas (164,90); Desconto em % sem casas (17%). O desconto
+    # vem como FRAÇÃO (0.1672 = 16,72%), então ×100 p/ o formato "%.0f%%" mostrar "17%".
+    _show = df.copy()
+    _cfg = {}
+    for _c in ("DE", "POR"):
+        if _c in _show.columns:
+            _show[_c] = pd.to_numeric(_show[_c], errors="coerce")
+            _cfg[_c] = st.column_config.NumberColumn(_c, format="%.2f")
+    if "Desconto" in _show.columns:
+        _show["Desconto"] = pd.to_numeric(_show["Desconto"], errors="coerce") * 100
+        _cfg["Desconto"] = st.column_config.NumberColumn("Desconto", format="%.0f%%")
+    st.dataframe(_show, width="stretch", hide_index=True, column_config=_cfg)
     _nome_arq = _tipo_amigavel(lista_nome) or "promocao"
     _c_csv, _c_xls, _ = st.columns([1, 1, 3])
     with _c_csv:
