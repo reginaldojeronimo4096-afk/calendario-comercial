@@ -209,25 +209,31 @@ st.markdown(
          *="idebarCollaps" p/ pegar os DOIS testids de uma vez
          (stSidebarCollapsedControl = abrir; stSidebarCollapseButton = fechar) —
          robusto entre versões do Streamlit. Aplico no container e no button. */
-      [data-testid*="idebarCollaps"],
-      [data-testid*="idebarCollaps"] button {
+      /* Botões de ABRIR (» = data-testid stExpandSidebarButton) e FECHAR
+         (« = stSidebarCollapseButton) a barra lateral: caixinha azul + sombra,
+         SEMPRE visíveis (o Streamlit some com eles fora do hover). Testids
+         confirmados inspecionando o HTML (o » tem "Expand", não "Collaps"!). */
+      [data-testid="stExpandSidebarButton"],
+      [data-testid="stSidebarCollapseButton"],
+      [data-testid="stSidebarCollapseButton"] button {
         background: #EAF2FB !important;
         border: 1px solid #1E88E5 !important;
         border-radius: 8px !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
-        opacity: 1 !important;          /* SEMPRE visível (não só ao passar o mouse) */
+        opacity: 1 !important;
         visibility: visible !important;
       }
-      [data-testid*="idebarCollaps"]:hover,
-      [data-testid*="idebarCollaps"] button:hover {
+      [data-testid="stExpandSidebarButton"]:hover,
+      [data-testid="stSidebarCollapseButton"]:hover,
+      [data-testid="stSidebarCollapseButton"] button:hover {
         background: #D6E8FA !important;
       }
-      /* Botão de ABRIR (barra fechada): vira um botão com o texto "Painel Lateral"
-         ao lado do », p/ ficar claro o que ele faz (ideia do Hudson). */
-      [data-testid="stSidebarCollapsedControl"] button {
+      /* SÓ no botão de ABRIR (»): vira um botão com o texto "Painel Lateral" ao
+         lado (ideia do Hudson) — bem mais claro que uma setinha solta. */
+      [data-testid="stExpandSidebarButton"] {
         width: auto !important; padding: 6px 12px !important;
       }
-      [data-testid="stSidebarCollapsedControl"] button::after {
+      [data-testid="stExpandSidebarButton"]::after {
         content: "Painel Lateral";
         font-weight: 700; font-size: 0.85rem; color: #155FA0;
         margin-left: 6px; white-space: nowrap;

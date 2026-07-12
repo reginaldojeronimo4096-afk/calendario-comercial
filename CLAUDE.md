@@ -86,6 +86,16 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
 6. **Exportar Excel** (openpyxl): cabeçalho verde/negrito, bordas, largura automática, datas
    **dd/mm/aaaa**, cabeçalho fixo. NÃO exporta a coluna "Cor" (hex).
 
+## Referência: testids do Streamlit p/ estilizar botões da barra lateral
+Confirmados inspecionando o HTML (mudam de nome entre versões — cuidado): botão de
+**ABRIR** a barra (`»`, barra fechada) = `data-testid="stExpandSidebarButton"` (tem
+"Expand", NÃO "Collaps"!); botão de **FECHAR** (`«`, barra aberta) = container
+`data-testid="stSidebarCollapseButton"` com um `<button data-testid="stBaseButton-headerNoPadding">`
+dentro. O Streamlit os deixa `opacity:0` fora do hover — forçar `opacity/visibility` p/
+ficarem sempre visíveis. Ícone é `data-testid="stIconMaterial"` (Material Symbols). No app,
+o `»` recebe o texto "Painel Lateral" via `::after`. (Classes `st-emotion-cache-*` mudam a
+cada build — NUNCA mirar nelas; use os `data-testid`.)
+
 ## Gotcha crítico: `Segmentation fault` no Streamlit Cloud (pandas 3.0)
 Se o app cair com `211 Segmentation fault` nos logs (não é exceção Python — é crash de
 lib nativa) ao interagir (ex.: trocar de mês), a causa foi o **pandas 3.0** (textos via
