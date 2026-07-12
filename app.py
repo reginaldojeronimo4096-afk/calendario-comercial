@@ -204,19 +204,20 @@ st.markdown(
         font-weight: 700 !important; background: #F0F2F6 !important;
       }
       [data-testid="stExpander"] summary:hover { background: #E6EAF1 !important; }
-      /* Botão de ABRIR a barra lateral (» quando ela está fechada): caixinha com
-         borda azul + sombra, p/ não ficar "perdido" no canto. Aplico no PRÓPRIO
-         elemento (o container) e no button interno — antes só o hover pegava,
-         porque o container é que carrega o estilo, não um <button> aninhado. */
-      [data-testid="stSidebarCollapsedControl"],
-      [data-testid="stSidebarCollapsedControl"] button {
+      /* Botões de ABRIR (») e FECHAR («) a barra lateral: caixinha azul + sombra,
+         p/ ficarem visíveis (antes só apareciam ao passar o mouse). Uso
+         *="idebarCollaps" p/ pegar os DOIS testids de uma vez
+         (stSidebarCollapsedControl = abrir; stSidebarCollapseButton = fechar) —
+         robusto entre versões do Streamlit. Aplico no container e no button. */
+      [data-testid*="idebarCollaps"],
+      [data-testid*="idebarCollaps"] button {
         background: #EAF2FB !important;
         border: 1px solid #1E88E5 !important;
         border-radius: 8px !important;
         box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
       }
-      [data-testid="stSidebarCollapsedControl"]:hover,
-      [data-testid="stSidebarCollapsedControl"] button:hover {
+      [data-testid*="idebarCollaps"]:hover,
+      [data-testid*="idebarCollaps"] button:hover {
         background: #D6E8FA !important;
       }
     </style>
@@ -490,14 +491,17 @@ hoje = date.today()
 # vertical_alignment="bottom": tudo assenta na mesma base. O "Adicionar" só marca
 # um flag (o pop-up dialog_adicionar é definido MAIS ABAIXO); o flag é consumido
 # depois dessa definição.
-_specs = [7]
+# Título com peso 6 (não 7): a fonte 1.9rem deixou o título mais curto, então
+# sobrava um vão grande antes dos botões — essa folga foi p/ o Mês/Ano (que
+# estavam espremidos, cortando "Dezembro").
+_specs = [6]
 if PODE_EDITAR:
     _specs.append(1.8)   # Adicionar ação (mais largo: não quebra com sidebar aberta)
 if EH_ADMIN:
     _specs.append(1.8)   # Usuários
 if PODE_EDITAR or EH_ADMIN:
     _specs.append(0.3)   # respiro entre os botões e o Mês (não colar no Mês)
-_specs += [1.0, 1.0]     # Mês, Ano
+_specs += [1.4, 1.2]     # Mês (cabe "Dezembro" inteiro) e Ano, mais largos
 _cols_topo = st.columns(_specs, vertical_alignment="bottom")
 col_titulo = _cols_topo[0]
 _k = 1
