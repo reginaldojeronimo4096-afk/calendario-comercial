@@ -9,6 +9,11 @@ import io
 import os
 import textwrap
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
+
+# Fuso de Brasília: o servidor do Streamlit Cloud roda em UTC (~3h à frente). Sem
+# isto, à noite o app "vira o dia" antes da hora (ex.: 23h de sáb vira domingo).
+FUSO_BR = ZoneInfo("America/Sao_Paulo")
 
 import pandas as pd
 import plotly.express as px
@@ -501,7 +506,7 @@ if "ciclos_df" not in st.session_state:
 # ----------------------------------------------------------------------------
 # Cabeçalho
 # ----------------------------------------------------------------------------
-hoje = date.today()
+hoje = datetime.now(FUSO_BR).date()   # data pelo horário de Brasília (não do servidor)
 
 # Topo em UMA linha: título + (Adicionar) + (Usuários) + Mês + Ano — sobe o
 # calendário (uma faixa a menos). As colunas dos botões só existem conforme o

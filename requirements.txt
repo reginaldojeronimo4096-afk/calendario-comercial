@@ -7,3 +7,6 @@ pandas>=2.0,<3.0
 openpyxl>=3.1
 supabase>=2.4
 bcrypt>=4.0
+# Base de fusos horários p/ o zoneinfo (horário de Brasília) funcionar mesmo se o
+# servidor não tiver a base do sistema.
+tzdata
