@@ -68,6 +68,26 @@ def _txt(v) -> str:
     return str(v).strip()
 
 
+def _fmt_data(v) -> str:
+    """Data do Excel -> 'dd/mm/aaaa'. Aceita datetime ou texto (ou vazio)."""
+    if v is None or v == "":
+        return ""
+    if hasattr(v, "strftime"):
+        return v.strftime("%d/%m/%Y")
+    return _txt(v)
+
+
+def _periodo_acao(b1, c1) -> str:
+    """Período da ação a partir de B1/C1 da aba. Se B1 tiver 'CICLO', a ação vale o
+    ciclo inteiro. Senão, 'dd/mm/aaaa a dd/mm/aaaa' (ou só uma data, se faltar a outra)."""
+    if "CICLO" in _txt(b1).upper():
+        return "Todo o ciclo"
+    ini, fim = _fmt_data(b1), _fmt_data(c1)
+    if ini and fim:
+        return f"{ini} a {fim}"
+    return ini or fim or ""
+
+
 def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
     """Lê o arquivo e devolve [(meta, produtos), ...] das abas LISTA_ visíveis."""
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
@@ -91,7 +111,8 @@ def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
             "tipo": _tipo_amigavel(nome),
             "ciclo": ciclo,
             "periodo": periodo,
-            "link_lp": _txt(celula(1, 2)),        # B2
+            "link_lp": _txt(celula(1, 2)),        # B2 = LP
+            "periodo_acao": _periodo_acao(celula(0, 2), celula(0, 3)),  # B1 (ou "CICLO") + C1
             "comissao": _num(celula(2, 40)),      # AN3
             "cupom": _num(celula(2, 41)),         # AO3
             "depor": _num(celula(2, 42)),         # AP3
@@ -225,9 +246,11 @@ def _mostra_lista_promocoes() -> None:
             # Nome COMPLETO da aba (com LISTA_xx), calculado do lista_nome — assim
             # já aparece certo nas listas atuais, sem precisar re-subir a grade.
             st.markdown(f"**{_tipo_amigavel(L['lista_nome'])}**")
+            # Período da AÇÃO (B1/C1) + LP (B2). O ciclo geral já aparece na faixa
+            # azul do topo, então aqui mostramos a info específica desta ação.
             st.caption(
-                f"Ciclo {L.get('ciclo') or '—'} · {L.get('periodo') or 'período —'}"
-                + (f" · {L.get('link_lp')}" if L.get("link_lp") else "")
+                f"🗓️ {L.get('periodo_acao') or 'período —'}"
+                + (f"  ·  🔗 LP: {L.get('link_lp')}" if L.get("link_lp") else "")
             )
         c2.markdown(f"**{L.get('total_skus', 0)}** SKUs")
         if c3.button("ver ▸", key=f"ver_{L['id']}", width="stretch"):
@@ -247,10 +270,10 @@ def _mostra_produtos(lista_nome: str) -> None:
         # Descrição em faixa destacada (fonte maior + texto escuro + barra azul),
         # em vez do caption cinza pequeno de antes.
         _info = (
-            f"<b>{L.get('total_skus', 0)} produtos</b> · Ciclo {L.get('ciclo') or '—'} · "
-            f"{L.get('periodo') or 'período —'} · Cupom {_pct(L.get('cupom'))} · "
+            f"<b>{L.get('total_skus', 0)} produtos</b> · 🗓️ "
+            f"{L.get('periodo_acao') or 'período —'} · Cupom {_pct(L.get('cupom'))} · "
             f"Depor {_pct(L.get('depor'))}"
-            + (f" · Página: {L.get('link_lp')}" if L.get("link_lp") else "")
+            + (f" · 🔗 LP: {L.get('link_lp')}" if L.get("link_lp") else "")
         )
         st.markdown(
             f"<div style='background:#F0F2F6;border-left:4px solid #1E88E5;"

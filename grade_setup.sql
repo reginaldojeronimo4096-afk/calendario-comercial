@@ -10,6 +10,7 @@ create table if not exists grade_listas (
   tipo text default '',
   ciclo text default '',
   periodo text default '',
+  periodo_acao text default '',   -- período da AÇÃO (B1/C1 da aba, ou "Todo o ciclo")
   link_lp text default '',
   total_skus int default 0,
   comissao numeric,
