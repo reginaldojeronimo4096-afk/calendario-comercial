@@ -6,9 +6,9 @@
 __pycache__/
 *.pyc
 
-# Backups locais gerados pelo app / pela convenção
-app_backup_*.py
-acoes_backup_*.csv
+# Backups locais gerados pela convenção (app/auth/db/grade + csv) — não vão p/ o repo
+*_backup_*.py
+*_backup_*.csv
 
 # Dados de negócio ficam SÓ no Supabase — não vão para o repositório (público)
 acoes.csv
