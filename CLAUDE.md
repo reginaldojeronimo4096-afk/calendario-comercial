@@ -79,13 +79,19 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
    - Fins de semana em **vermelho** nos rótulos; faixa amarela/azul do "Portfólio do Ciclo" no topo.
    - Linha sutil entre ações empilhadas (sub-linhas) da mesma faixa.
    - **Clicar numa barra do corpo** (só `PODE_EDITAR` = admin/editor) abre o pop-up
-     `dialog_editar_descricao` — edição RÁPIDA só da **descrição**, já preenchida.
-     Via `st.plotly_chart(..., on_select="rerun", selection_mode="points")` no `fig`
-     (o corpo; DESTAQUE/cabeçalho NÃO é clicável). A ação clicada é identificada pelo
-     `_orig_idx` (índice em `st.session_state.df`) levado no `custom_data` — reserva:
-     mapa `_traco_orig` pelo `curve_number`. A `key` do gráfico carrega `_corpo_key_n`,
-     incrementado a cada clique tratado p/ ZERAR a seleção (senão o pop-up reabria
-     sozinho ao fechar). Barras "fantasma" (faixa vazia) têm `_orig_idx = -1` (ignora).
+     `dialog_editar_descricao` — edição RÁPIDA do **texto que aparece na barra**
+     (o campo **`Ação`**, NÃO o `Detalhes`/hover — o usuário chama esse texto de
+     "descrição"), já preenchido. Via `st.plotly_chart(..., on_select="rerun",
+     selection_mode="points")` no `fig` (o corpo; DESTAQUE/cabeçalho NÃO é clicável).
+     A ação clicada é identificada pelo `_orig_idx` (índice em `st.session_state.df`)
+     levado no `custom_data` — reserva: mapa `_traco_orig` pelo `curve_number`.
+     - Fluxo em DUAS execuções p/ o fundo do modal não ficar "esbranquiçado" ao
+       fechar: no clique, incrementa `_corpo_key_n` (troca a `key` do gráfico →
+       zera a seleção) e `st.rerun()` SEM abrir o pop-up; grava `_abrir_edit_desc`.
+       Na execução seguinte (página limpa, sem seleção) um bloco consome o flag e
+       abre o pop-up. Nunca abrir/fechar o modal no MESMO render em que a `key`
+       muda (a troca de key travava a remoção do escurecido). Barras "fantasma"
+       (faixa vazia) têm `_orig_idx = -1` (só zera a seleção, sem pop-up).
 5. **Expander "Editar ou excluir ações"** (recolhido): `st.data_editor`. Coluna **Categoria é um
    `SelectboxColumn`** (opções = CATEGORIAS_PADRAO + já usadas). Botões Salvar / Baixar Excel /
    **Limpar calendário** (com confirmação + backup) na mesma linha.

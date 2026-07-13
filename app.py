@@ -778,13 +778,14 @@ def dialog_adicionar(ano, mes_num):
 
 
 # ----------------------------------------------------------------------------
-# Pop-up: editar RÁPIDO só a descrição de uma ação (clicando na barra)
+# Pop-up: editar RÁPIDO o texto da barra de uma ação (clicando na barra)
 # ----------------------------------------------------------------------------
 # Aberto ao clicar numa barra do calendário (só admin/editor). Mostra uma
-# "plaquinha" com o nome/período da ação e um campo de descrição JÁ PREENCHIDO
-# com o texto atual — a pessoa só ajusta e salva. Aqui muda SÓ a descrição; nome,
-# faixa, datas e cor continuam no expander "Editar ou excluir ações".
-@st.dialog("✏️ Editar descrição da ação", width="large")
+# "plaquinha" com a faixa/período e um campo JÁ PREENCHIDO com o texto que
+# aparece na barra (o campo "Ação") — a pessoa só ajusta e salva. É o texto que
+# o usuário chama de "descrição" (o escrito na barra); a Descrição/Detalhes
+# (só no hover) e o resto continuam no expander "Editar ou excluir ações".
+@st.dialog("✏️ Editar ação", width="large")
 def dialog_editar_descricao(orig_idx):
     _dfx = st.session_state.df
     if orig_idx not in _dfx.index:
@@ -794,7 +795,7 @@ def dialog_editar_descricao(orig_idx):
         )
         return
     _linha = _dfx.loc[orig_idx]
-    _nome = _para_texto(_linha.get("Ação")).strip() or "(sem nome)"
+    _faixa = _para_texto(_linha.get("Categoria")).strip() or "(sem faixa)"
 
     def _fmt(d):
         try:
@@ -802,24 +803,29 @@ def dialog_editar_descricao(orig_idx):
         except (ValueError, TypeError):
             return "—"
 
-    # Plaquinha de contexto: deixa claro QUAL ação está sendo editada.
+    # Plaquinha de contexto: em qual FAIXA/período está a ação clicada (não repete
+    # o texto, que já é o campo editável logo abaixo).
     st.markdown(
-        f"**Editando:** {_nome} &nbsp;·&nbsp; "
+        f"**Editando em:** {_faixa} &nbsp;·&nbsp; "
         f"{_fmt(_linha.get('Início'))} a {_fmt(_linha.get('Fim'))}"
     )
-    st.caption("Ajuste o texto e clique em Salvar. (Aqui muda só a descrição.)")
+    st.caption("Ajuste o texto que aparece na barra e clique em Salvar.")
 
     _novo = st.text_area(
-        "Descrição da ação",
-        value=_para_texto(_linha.get("Detalhes")),
-        height=160,
+        "Texto da ação (o que aparece na barra)",
+        value=_para_texto(_linha.get("Ação")),
+        height=140,
         key=f"edit_desc_txt_{orig_idx}",
     )
-    if st.button("💾 Salvar descrição", type="primary", key="edit_desc_salvar"):
-        st.session_state.df.at[orig_idx, "Detalhes"] = _novo.strip()
-        salvar(st.session_state.df)
-        st.session_state.flash = f"Descrição de “{_nome}” atualizada!"
-        st.rerun()
+    if st.button("💾 Salvar", type="primary", key="edit_desc_salvar"):
+        _txt = _novo.strip()
+        if not _txt:
+            st.error("O texto não pode ficar vazio. 🙂")
+        else:
+            st.session_state.df.at[orig_idx, "Ação"] = _txt
+            salvar(st.session_state.df)
+            st.session_state.flash = "Ação atualizada!"
+            st.rerun()
 
 
 # ----------------------------------------------------------------------------
@@ -1463,7 +1469,6 @@ if PODE_EDITAR and _sel_corpo:
     except (KeyError, TypeError):
         _pontos_sel = []
     if _pontos_sel:
-        st.session_state["_corpo_key_n"] = st.session_state.get("_corpo_key_n", 0) + 1
         _p0 = _pontos_sel[0]
         try:
             _idx_clicado = int(_p0["customdata"][3])
@@ -1474,10 +1479,21 @@ if PODE_EDITAR and _sel_corpo:
                 _idx_clicado = _traco_orig.get(int(_p0["curve_number"]), -1)
             except (KeyError, TypeError, ValueError):
                 _idx_clicado = -1
+        # Troca a key do gráfico (zera a seleção) e re-executa SEM abrir o pop-up
+        # aqui. O pop-up abre na PRÓXIMA execução (bloco abaixo), já com a página
+        # redesenhada e a seleção limpa. Assim a troca de key NÃO coincide com o
+        # abrir/fechar do pop-up — era isso que deixava o fundo esbranquiçado ao
+        # fechar no X. Faixa vazia (idx < 0): só zera a seleção, sem pop-up.
+        st.session_state["_corpo_key_n"] = st.session_state.get("_corpo_key_n", 0) + 1
         if _idx_clicado >= 0:
-            dialog_editar_descricao(_idx_clicado)
-        else:
-            st.rerun()                             # faixa vazia: só limpa a seleção
+            st.session_state["_abrir_edit_desc"] = _idx_clicado
+        st.rerun()
+
+# Abre o pop-up de edição na execução SEGUINTE ao clique (página já redesenhada,
+# gráfico com key nova e sem seleção) — pop-up sobre um fundo limpo, que some
+# direitinho ao fechar. O flag é consumido (pop) para não reabrir sozinho.
+if PODE_EDITAR and "_abrir_edit_desc" in st.session_state:
+    dialog_editar_descricao(st.session_state.pop("_abrir_edit_desc"))
 
 
 # ----------------------------------------------------------------------------
