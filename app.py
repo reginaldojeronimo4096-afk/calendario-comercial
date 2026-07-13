@@ -778,6 +778,51 @@ def dialog_adicionar(ano, mes_num):
 
 
 # ----------------------------------------------------------------------------
+# Pop-up: editar RÁPIDO só a descrição de uma ação (clicando na barra)
+# ----------------------------------------------------------------------------
+# Aberto ao clicar numa barra do calendário (só admin/editor). Mostra uma
+# "plaquinha" com o nome/período da ação e um campo de descrição JÁ PREENCHIDO
+# com o texto atual — a pessoa só ajusta e salva. Aqui muda SÓ a descrição; nome,
+# faixa, datas e cor continuam no expander "Editar ou excluir ações".
+@st.dialog("✏️ Editar descrição da ação", width="large")
+def dialog_editar_descricao(orig_idx):
+    _dfx = st.session_state.df
+    if orig_idx not in _dfx.index:
+        st.warning(
+            "Não encontrei essa ação (a lista pode ter mudado). "
+            "Feche este aviso e clique na barra de novo. 🙂"
+        )
+        return
+    _linha = _dfx.loc[orig_idx]
+    _nome = _para_texto(_linha.get("Ação")).strip() or "(sem nome)"
+
+    def _fmt(d):
+        try:
+            return pd.to_datetime(d).strftime("%d/%m/%Y")
+        except (ValueError, TypeError):
+            return "—"
+
+    # Plaquinha de contexto: deixa claro QUAL ação está sendo editada.
+    st.markdown(
+        f"**Editando:** {_nome} &nbsp;·&nbsp; "
+        f"{_fmt(_linha.get('Início'))} a {_fmt(_linha.get('Fim'))}"
+    )
+    st.caption("Ajuste o texto e clique em Salvar. (Aqui muda só a descrição.)")
+
+    _novo = st.text_area(
+        "Descrição da ação",
+        value=_para_texto(_linha.get("Detalhes")),
+        height=160,
+        key=f"edit_desc_txt_{orig_idx}",
+    )
+    if st.button("💾 Salvar descrição", type="primary", key="edit_desc_salvar"):
+        st.session_state.df.at[orig_idx, "Detalhes"] = _novo.strip()
+        salvar(st.session_state.df)
+        st.session_state.flash = f"Descrição de “{_nome}” atualizada!"
+        st.rerun()
+
+
+# ----------------------------------------------------------------------------
 # Abre o pop-up "Adicionar nova ação" se o botão do TOPO foi clicado.
 # ----------------------------------------------------------------------------
 # O botão fica no cabeçalho (lá em cima), mas o pop-up (dialog_adicionar) é
@@ -813,17 +858,22 @@ else:
 
 # Mês sem ações: mostra a grade vazia do mês (bloco transparente "fantasma"),
 # em vez de erro, e avisa que ainda não há ações.
-if df_view.empty:
+_mes_vazio = df_view.empty
+if _mes_vazio:
     st.info(
         f"Nenhuma ação em {MESES_PT[mes_num - 1]} de {ano} ainda. "
         "Adicione no formulário acima. ☝️"
     )
     df_view = pd.DataFrame([{
         "Ação": "", "Categoria": FAIXAS_FIXAS[0], "Início": sel_inicio, "Fim": sel_inicio,
-        "Cor": "rgba(0,0,0,0)", "Detalhes": "",
+        "Cor": "rgba(0,0,0,0)", "Detalhes": "", "_orig_idx": -1,
     }])
 
 plot_df = df_view.copy()
+# Guarda o índice ORIGINAL de cada ação (posição em st.session_state.df) para o
+# clique na barra saber QUAL ação editar. Linhas "fantasma" (mês/faixa vazia) = -1.
+if not _mes_vazio:
+    plot_df["_orig_idx"] = list(df_view.index)
 # Normaliza o nome da faixa (tira espaços/quebras e aplica as equivalências
 # de nomes antigos), p/ casar com a lista fixa FAIXAS_FIXAS.
 plot_df["Categoria"] = plot_df["Categoria"].map(normaliza_categoria)
@@ -886,7 +936,7 @@ def _linha_vazia(cat):
     d0 = pd.Timestamp(sel_inicio)
     return {
         "Ação": "", "Categoria": cat, "Início": sel_inicio, "Fim": sel_inicio,
-        "Cor": "rgba(0,0,0,0)", "Detalhes": "",
+        "Cor": "rgba(0,0,0,0)", "Detalhes": "", "_orig_idx": -1,
         "Início_plot": d0 - meia, "Fim_plot": d0 + meia,
         "Rótulo": "", "Início_fmt": d0.strftime("%d/%m/%Y"),
         "Fim_fmt": d0.strftime("%d/%m/%Y"),
@@ -969,7 +1019,7 @@ fig = px.timeline(
     color="_cor_id",
     color_discrete_map=mapa_cores,
     text="Rótulo",
-    custom_data=["_det_hover", "Início_fmt", "Fim_fmt"],
+    custom_data=["_det_hover", "Início_fmt", "Fim_fmt", "_orig_idx"],
     category_orders={"_lane": ordem_lanes},
 )
 
@@ -1362,6 +1412,16 @@ _cfg_cal = {
     "showAxisDragHandles": False, # sem alças de arraste nos eixos
     "displaylogo": False,
 }
+# Mapa nº-do-traço -> índice ORIGINAL da ação. Cada traço do Plotly é uma ação
+# (cor única por linha), então dá p/ descobrir a ação clicada pelo curve_number —
+# usado como reserva caso o custom_data não volte junto na seleção.
+_traco_orig = {}
+for _i_tr, _tr in enumerate(fig.data):
+    try:
+        _traco_orig[_i_tr] = int(plot_df.at[int(_tr.name), "_orig_idx"])
+    except (ValueError, KeyError, TypeError):
+        _traco_orig[_i_tr] = -1
+
 # Um ÚNICO envelope rolável na horizontal, com o cabeçalho em cima e as faixas
 # embaixo — os dois com o MESMO piso de largura, então sempre alinhados ao rolar.
 with st.container(key="cal_scroll"):
@@ -1376,9 +1436,48 @@ with st.container(key="cal_scroll"):
             key="grafico_destaque",
         )
     with st.container(key="cal_box"):
-        st.plotly_chart(
-            fig, width="stretch", config=_cfg_cal, key="grafico_corpo",
+        # on_select="rerun": admin/editor CLICAM numa barra p/ editar a descrição.
+        # A key inclui um contador que é incrementado a cada clique tratado (bloco
+        # abaixo), o que ZERA a seleção no próximo render — assim o pop-up não
+        # reabre sozinho ao fechar. Leitor: on_select="ignore" (nada acontece).
+        _sel_corpo = st.plotly_chart(
+            fig, width="stretch", config=_cfg_cal,
+            key=f"grafico_corpo_{st.session_state.get('_corpo_key_n', 0)}",
+            on_select=("rerun" if PODE_EDITAR else "ignore"),
+            selection_mode="points",
         )
+
+
+# ----------------------------------------------------------------------------
+# Clique numa barra abre a edição RÁPIDA da descrição (só admin/editor)
+# ----------------------------------------------------------------------------
+# Ao clicar numa barra do corpo, o app re-executa e a seleção volta em
+# _sel_corpo. Descobrimos qual ação foi clicada pelo _orig_idx (guardado no
+# custom_data; se não vier, caímos no _traco_orig pelo nº do traço) e abrimos o
+# pop-up já preenchido. Incrementar "_corpo_key_n" troca a key do gráfico no
+# próximo render -> seleção zerada (o pop-up não reabre sozinho, e clicar de novo
+# na MESMA barra volta a abrir). Barras "fantasma" (faixa vazia) têm _orig_idx=-1.
+if PODE_EDITAR and _sel_corpo:
+    try:
+        _pontos_sel = _sel_corpo["selection"]["points"]
+    except (KeyError, TypeError):
+        _pontos_sel = []
+    if _pontos_sel:
+        st.session_state["_corpo_key_n"] = st.session_state.get("_corpo_key_n", 0) + 1
+        _p0 = _pontos_sel[0]
+        try:
+            _idx_clicado = int(_p0["customdata"][3])
+        except (KeyError, IndexError, TypeError, ValueError):
+            _idx_clicado = -1
+        if _idx_clicado < 0:                       # reserva: descobre pelo traço
+            try:
+                _idx_clicado = _traco_orig.get(int(_p0["curve_number"]), -1)
+            except (KeyError, TypeError, ValueError):
+                _idx_clicado = -1
+        if _idx_clicado >= 0:
+            dialog_editar_descricao(_idx_clicado)
+        else:
+            st.rerun()                             # faixa vazia: só limpa a seleção
 
 
 # ----------------------------------------------------------------------------

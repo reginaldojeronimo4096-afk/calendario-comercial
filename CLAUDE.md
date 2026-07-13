@@ -78,6 +78,14 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
      linhas** só quando **não cabem** na largura da barra (`CHARS_LARGURA_CHEIA`, hoje 75).
    - Fins de semana em **vermelho** nos rótulos; faixa amarela/azul do "Portfólio do Ciclo" no topo.
    - Linha sutil entre ações empilhadas (sub-linhas) da mesma faixa.
+   - **Clicar numa barra do corpo** (só `PODE_EDITAR` = admin/editor) abre o pop-up
+     `dialog_editar_descricao` — edição RÁPIDA só da **descrição**, já preenchida.
+     Via `st.plotly_chart(..., on_select="rerun", selection_mode="points")` no `fig`
+     (o corpo; DESTAQUE/cabeçalho NÃO é clicável). A ação clicada é identificada pelo
+     `_orig_idx` (índice em `st.session_state.df`) levado no `custom_data` — reserva:
+     mapa `_traco_orig` pelo `curve_number`. A `key` do gráfico carrega `_corpo_key_n`,
+     incrementado a cada clique tratado p/ ZERAR a seleção (senão o pop-up reabria
+     sozinho ao fechar). Barras "fantasma" (faixa vazia) têm `_orig_idx = -1` (ignora).
 5. **Expander "Editar ou excluir ações"** (recolhido): `st.data_editor`. Coluna **Categoria é um
    `SelectboxColumn`** (opções = CATEGORIAS_PADRAO + já usadas). Botões Salvar / Baixar Excel /
    **Limpar calendário** (com confirmação + backup) na mesma linha.
