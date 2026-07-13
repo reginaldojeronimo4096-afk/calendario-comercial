@@ -371,25 +371,6 @@ def dialog_gerenciar_usuarios() -> None:
         "pendente": "🟡 PENDENTE", "ativo": "🟢 ATIVO", "revogado": "🔴 REVOGADO",
     }
 
-    # Busca por nome OU e-mail — prático quando há muitos usuários. Filtra ao vivo
-    # (o st.dialog re-executa a cada tecla e continua ABERTO). Pendentes seguem no
-    # topo por causa da ordenação acima; a busca só recorta a lista mostrada.
-    _busca = st.text_input(
-        "🔎 Pesquisar usuário",
-        key="busca_usuarios",
-        placeholder="Digite parte do nome ou do e-mail…",
-    ).strip().lower()
-    if _busca:
-        usuarios = [
-            u for u in usuarios
-            if _busca in (u.get("nome") or "").lower()
-            or _busca in (u.get("usuario") or "").lower()
-        ]
-        st.caption(f"{len(usuarios)} resultado(s) para “{_busca}”.")
-        if not usuarios:
-            st.info("Nenhum usuário encontrado. Tente outro nome ou e-mail. 🙂")
-            return
-
     for u in usuarios:
         uid, status = u["id"], u.get("status", "")
         sou_eu = uid == eu.get("id")

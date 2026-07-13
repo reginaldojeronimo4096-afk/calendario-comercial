@@ -561,6 +561,7 @@ if col_add is not None:
 if col_ger is not None:
     with col_ger:
         if st.button("👥 Usuários", key="btn_gerenciar", width="stretch"):
+            st.session_state.pop("busca_usuarios", None)  # abre sem filtro antigo
             auth.dialog_gerenciar_usuarios()
 # Botão "Usuários" verde (o de adicionar continua vermelho/primary).
 if EH_ADMIN:
