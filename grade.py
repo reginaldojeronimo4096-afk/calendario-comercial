@@ -14,6 +14,8 @@ import re
 import openpyxl
 import pandas as pd
 import streamlit as st
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
 
 import db
 
@@ -155,9 +157,53 @@ def _pct(v):
 
 
 def _excel_bytes(df: pd.DataFrame) -> bytes:
+    """Excel formatado (mesmo capricho do Excel do calendário): cabeçalho verde/
+    negrito, bordas, LARGURA AUTOMÁTICA das colunas (some o texto espremido) e
+    cabeçalho fixo ao rolar."""
     buffer = io.BytesIO()
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df.to_excel(writer, index=False, sheet_name="Produtos")
+        ws = writer.sheets["Produtos"]
+
+        # --- Estilos (iguais aos do Excel do calendário) ---
+        verde = PatternFill("solid", fgColor="A9D18E")    # cabeçalho verde claro
+        fonte_cab = Font(bold=True, color="1F3B08")        # texto verde escuro/negrito
+        centro = Alignment(horizontal="center", vertical="center", wrap_text=False)
+        esq = Alignment(horizontal="left", vertical="center", wrap_text=False)
+        _fina = Side(style="thin", color="BFBFBF")
+        borda = Border(left=_fina, right=_fina, top=_fina, bottom=_fina)
+
+        cols = list(df.columns)
+        # Números/códigos centralizados; textos (descrição etc.) à esquerda.
+        centralizar = {"SKU", "DE", "POR", "Desconto", "Ciclo Promo"}
+        n_lin, n_col = ws.max_row, ws.max_column
+
+        # Cabeçalho (linha 1): verde, negrito, centralizado, com borda.
+        for c in range(1, n_col + 1):
+            cell = ws.cell(row=1, column=c)
+            cell.fill = verde
+            cell.font = fonte_cab
+            cell.alignment = centro
+            cell.border = borda
+
+        # Corpo: bordas + alinhamento por tipo de coluna.
+        for r in range(2, n_lin + 1):
+            for c in range(1, n_col + 1):
+                cell = ws.cell(row=r, column=c)
+                cell.border = borda
+                cell.alignment = centro if cols[c - 1] in centralizar else esq
+
+        # Largura AUTOMÁTICA: cada coluna acompanha o maior conteúdo (mín. 10,
+        # máx. 55 p/ a Descrição não esticar demais).
+        for c in range(1, n_col + 1):
+            letra = get_column_letter(c)
+            maior = max(
+                (len(str(ws.cell(row=r, column=c).value or "")) for r in range(1, n_lin + 1)),
+                default=10,
+            )
+            ws.column_dimensions[letra].width = min(max(maior + 2, 10), 55)
+
+        ws.freeze_panes = "A2"  # cabeçalho fixo ao rolar
     return buffer.getvalue()
 
 
