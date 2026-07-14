@@ -206,8 +206,8 @@ def tela_escolha_empresa() -> None:
     )
     with st.container(key="escolha_wrap"):
         st.markdown(
-            "<div class='esc-titulo'>Bem-vindo(a)! 👋</div>"
-            "<div class='esc-sub'>Qual calendário você quer acessar?</div>",
+            "<div class='esc-titulo' style='margin:0 0 1.3rem;'>"
+            "📅 Calendário de Ações</div>",
             unsafe_allow_html=True,
         )
         c1, c2 = st.columns(2)
