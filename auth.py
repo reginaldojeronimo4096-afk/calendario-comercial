@@ -102,6 +102,7 @@ def usuario_atual():
 
 def sair() -> None:
     st.session_state.pop("auth_user", None)
+    st.session_state.pop("_empresa", None)   # ao sair, esquece a empresa escolhida
     st.rerun()
 
 
@@ -232,40 +233,49 @@ def tela_escolha_empresa() -> None:
                         st.session_state["_empresa"] = chave
                         st.rerun()
 
+        # Sair (caso queira trocar de conta a partir daqui).
+        st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
+        _cs1, _csm, _cs2 = st.columns([2, 1.2, 2])
+        with _csm:
+            if st.button("↩︎ Sair", key="sair_escolha", width="stretch"):
+                sair()
 
-def tela_login(empresa: str = "natura") -> None:
-    cfg = empresa_cfg(empresa)
-    _css_login(cfg["cor"], cfg["cor_hover"])
-    with st.container(key="login_card"):
+
+def tela_login(empresa=None) -> None:
+    """Login. No fluxo atual vem ANTES de escolher a empresa, então é NEUTRO (sem
+    cor/logo de marca — a mesma conta serve às duas). Se um dia quiser o login
+    colorido por marca, é só chamar com empresa='natura'/'avon' (mantido)."""
+    if empresa:
+        cfg = empresa_cfg(empresa)
+        _css_login(cfg["cor"], cfg["cor_hover"])
         _logo = _logo_uri(cfg["logo"])
+    else:
+        _css_login("#1E88E5", "#155FA0")   # azul neutro (nem laranja, nem rosa)
+        _logo = None
+    with st.container(key="login_card"):
         if _logo:
             st.markdown(
                 f"<div style='text-align:center;margin:.2rem 0 .6rem;'>"
-                f"<img src='{_logo}' alt='{cfg['nome']}' "
+                f"<img src='{_logo}' alt='logo' "
                 f"style='width:60%;max-width:210px;height:auto;'></div>",
                 unsafe_allow_html=True,
             )
-        else:  # se o arquivo faltar, cai no emoji (nunca quebra a tela)
             st.markdown(
-                f"<div class='login-logo'>{cfg['emoji']} {cfg['nome']}</div>",
+                "<div class='login-titulo'>Calendário da Grade Comercial</div>",
                 unsafe_allow_html=True,
             )
-        st.markdown(
-            "<div class='login-titulo'>Calendário da Grade Comercial</div>",
-            unsafe_allow_html=True,
-        )
+        else:  # login NEUTRO: título do app + subtítulo deixando claro que serve às duas
+            st.markdown(
+                "<div class='login-logo'>📅 Calendário de Ações</div>"
+                "<div class='login-titulo'>Grade Comercial · Natura &amp; Avon</div>",
+                unsafe_allow_html=True,
+            )
         if st.session_state.get("_modo_cadastro"):
             _form_cadastro()
         elif st.session_state.get("_modo_reset"):
             _form_reset()
         else:
             _form_login()
-        # Voltar à tela de escolha da empresa (antes de logar).
-        if st.button(f"↩︎ Trocar empresa (agora: {cfg['nome']})",
-                     key="trocar_emp_login", width="stretch"):
-            for _m in ("_empresa", "_modo_cadastro", "_modo_reset"):
-                st.session_state.pop(_m, None)
-            st.rerun()
 
 
 def _form_login() -> None:

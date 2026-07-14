@@ -298,19 +298,19 @@ _desliga_traducao()
 # logado, PAPEL define o que a pessoa pode fazer.
 auth.inicializar()
 
-# 1) Escolha da EMPRESA (Natura x Avon) ANTES do login. Enquanto ninguém escolher,
-# mostra a tela de escolha e para aqui. O botão "Trocar empresa" (barra lateral e
-# login) zera '_empresa' p/ cair de novo nesta tela. Uma conta só serve às duas.
+# 1) Login PRIMEIRO (neutro — a MESMA conta serve às duas empresas).
+if not auth.esta_logado():
+    auth.tela_login()
+    st.stop()
+
+# 2) Escolha da EMPRESA (Natura x Avon), JÁ logado. Enquanto ninguém escolher,
+# mostra a tela de escolha e para aqui. "Trocar empresa" (barra lateral) zera
+# '_empresa' p/ voltar a esta tela SEM deslogar.
 if not st.session_state.get("_empresa"):
     auth.tela_escolha_empresa()
     st.stop()
 EMPRESA = st.session_state["_empresa"]        # "natura" | "avon" — separa os dados
 _EMP_CFG = auth.empresa_cfg(EMPRESA)
-
-# 2) Login (com a CARA da empresa escolhida — logo/cor).
-if not auth.esta_logado():
-    auth.tela_login(EMPRESA)
-    st.stop()
 
 _U = auth.usuario_atual()
 PAPEL = _U["papel"]
