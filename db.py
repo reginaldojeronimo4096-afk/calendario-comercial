@@ -26,33 +26,43 @@ def _cliente() -> Client:
 # ---------------------------------------------------------------------------
 # Ações do calendário
 # ---------------------------------------------------------------------------
-def listar_acoes() -> list:
-    r = _cliente().table("acoes").select("*").order("id").execute()
+def listar_acoes(marca: str = "natura") -> list:
+    r = (
+        _cliente().table("acoes").select("*")
+        .eq("marca", marca).order("id").execute()
+    )
     return r.data or []
 
 
-def substituir_acoes(registros: list) -> None:
-    """Regrava TODAS as ações (apaga tudo e insere de novo) — espelha o antigo
-    'salvar CSV inteiro'. Volume é pequeno, então é simples e seguro."""
+def substituir_acoes(registros: list, marca: str = "natura") -> None:
+    """Regrava as ações DESTA empresa (apaga só as da marca e insere de novo) —
+    espelha o antigo 'salvar CSV inteiro'. Volume pequeno, simples e seguro.
+    IMPORTANTE: o delete é filtrado por marca p/ NÃO tocar nos dados da outra
+    empresa (Natura x Avon vivem na mesma tabela, separadas pela coluna 'marca')."""
     c = _cliente()
-    c.table("acoes").delete().gte("id", 0).execute()
+    c.table("acoes").delete().eq("marca", marca).execute()
     if registros:
-        c.table("acoes").insert(registros).execute()
+        regs = [{**r, "marca": marca} for r in registros]  # garante a marca certa
+        c.table("acoes").insert(regs).execute()
 
 
 # ---------------------------------------------------------------------------
 # Ciclos (Portfólio do Ciclo)
 # ---------------------------------------------------------------------------
-def listar_ciclos() -> list:
-    r = _cliente().table("ciclos").select("*").order("id").execute()
+def listar_ciclos(marca: str = "natura") -> list:
+    r = (
+        _cliente().table("ciclos").select("*")
+        .eq("marca", marca).order("id").execute()
+    )
     return r.data or []
 
 
-def substituir_ciclos(registros: list) -> None:
+def substituir_ciclos(registros: list, marca: str = "natura") -> None:
     c = _cliente()
-    c.table("ciclos").delete().gte("id", 0).execute()
+    c.table("ciclos").delete().eq("marca", marca).execute()
     if registros:
-        c.table("ciclos").insert(registros).execute()
+        regs = [{**r, "marca": marca} for r in registros]
+        c.table("ciclos").insert(regs).execute()
 
 
 # ---------------------------------------------------------------------------
@@ -101,34 +111,46 @@ def remover_usuario(usuario_id) -> None:
 # ---------------------------------------------------------------------------
 # Grade de Ativação (promoções + produtos)
 # ---------------------------------------------------------------------------
-def grade_listar_listas() -> list:
-    r = _cliente().table("grade_listas").select("*").order("tipo").execute()
+def grade_listar_listas(marca: str = "natura") -> list:
+    r = (
+        _cliente().table("grade_listas").select("*")
+        .eq("marca", marca).order("tipo").execute()
+    )
     return r.data or []
 
 
-def grade_upsert_lista(lista: dict) -> None:
-    """Cria/atualiza a promoção pela chave 'lista_nome' (substitui ao subir grade
-    nova). Listas que não vierem no arquivo NÃO são tocadas (viram histórico)."""
+def grade_upsert_lista(lista: dict, marca: str = "natura") -> None:
+    """Cria/atualiza a promoção pela chave (marca, lista_nome) — substitui ao subir
+    grade nova. Listas que não vierem no arquivo NÃO são tocadas (viram histórico).
+    A unicidade é por (marca, lista_nome), então Natura e Avon podem ter a MESMA
+    'LISTA_20' sem uma sobrescrever a outra."""
     dados = dict(lista)
+    dados["marca"] = marca
     dados["atualizado_em"] = datetime.now(timezone.utc).isoformat()
-    _cliente().table("grade_listas").upsert(dados, on_conflict="lista_nome").execute()
+    _cliente().table("grade_listas").upsert(
+        dados, on_conflict="marca,lista_nome"
+    ).execute()
 
 
-def grade_substituir_produtos(lista_nome: str, produtos: list) -> None:
-    """Troca TODOS os produtos daquela promoção pelos novos (apaga e reinsere)."""
+def grade_substituir_produtos(lista_nome: str, produtos: list, marca: str = "natura") -> None:
+    """Troca TODOS os produtos daquela promoção pelos novos (apaga e reinsere) —
+    escopo por (marca, lista_nome) p/ não mexer na outra empresa."""
     c = _cliente()
-    c.table("grade_produtos").delete().eq("lista_nome", lista_nome).execute()
-    for i in range(0, len(produtos), 500):        # insere em lotes de 500
-        lote = produtos[i:i + 500]
+    (c.table("grade_produtos").delete()
+     .eq("marca", marca).eq("lista_nome", lista_nome).execute())
+    regs = [{**p, "marca": marca} for p in produtos]
+    for i in range(0, len(regs), 500):        # insere em lotes de 500
+        lote = regs[i:i + 500]
         if lote:
             c.table("grade_produtos").insert(lote).execute()
 
 
-def grade_listar_produtos(lista_nome: str) -> list:
+def grade_listar_produtos(lista_nome: str, marca: str = "natura") -> list:
     r = (
         _cliente()
         .table("grade_produtos")
         .select("*")
+        .eq("marca", marca)
         .eq("lista_nome", lista_nome)
         .order("id")
         .execute()
@@ -136,15 +158,17 @@ def grade_listar_produtos(lista_nome: str) -> list:
     return r.data or []
 
 
-def grade_apagar_lista(lista_nome: str) -> None:
-    """Apaga UMA promoção (a lista + os produtos dela)."""
+def grade_apagar_lista(lista_nome: str, marca: str = "natura") -> None:
+    """Apaga UMA promoção desta empresa (a lista + os produtos dela)."""
     c = _cliente()
-    c.table("grade_produtos").delete().eq("lista_nome", lista_nome).execute()
-    c.table("grade_listas").delete().eq("lista_nome", lista_nome).execute()
+    (c.table("grade_produtos").delete()
+     .eq("marca", marca).eq("lista_nome", lista_nome).execute())
+    (c.table("grade_listas").delete()
+     .eq("marca", marca).eq("lista_nome", lista_nome).execute())
 
 
-def grade_apagar_todas() -> None:
-    """Apaga TODAS as promoções (todas as listas + todos os produtos)."""
+def grade_apagar_todas(marca: str = "natura") -> None:
+    """Apaga TODAS as promoções DESTA empresa (não toca na outra)."""
     c = _cliente()
-    c.table("grade_produtos").delete().gte("id", 0).execute()
-    c.table("grade_listas").delete().gte("id", 0).execute()
+    c.table("grade_produtos").delete().eq("marca", marca).execute()
+    c.table("grade_listas").delete().eq("marca", marca).execute()

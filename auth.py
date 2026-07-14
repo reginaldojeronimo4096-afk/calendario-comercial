@@ -28,6 +28,28 @@ PAPEIS = ["admin", "editor", "leitor"]
 # e um admin precisa aprovar — mantém gente de fora bloqueada por padrão.
 DOMINIO_CORP = "@natura.net"
 
+# ---------------------------------------------------------------------------
+# Empresas (marcas) — Natura e Avon. MESMO app e MESMOS usuários (uma conta só,
+# pois há gente que cuida das duas, ex.: mídia); o que muda é a MARCA dos dados
+# (calendário/promoções separados) e a CARA (logo/cor) da tela de escolha e login.
+# 'logo' é o arquivo PNG na pasta do projeto; 'cor' é o tom principal da marca.
+# ---------------------------------------------------------------------------
+EMPRESAS = {
+    "natura": {
+        "nome": "Natura", "emoji": "🌸", "logo": "natura_logo.png",
+        "cor": "#EE7B30", "cor_hover": "#D96C22",     # laranja Natura
+    },
+    "avon": {
+        "nome": "Avon", "emoji": "💄", "logo": "avon_logo.png",
+        "cor": "#E4007C", "cor_hover": "#B4004E",      # rosa/magenta Avon
+    },
+}
+
+
+def empresa_cfg(empresa: str) -> dict:
+    """Config visual da empresa (cai na Natura se vier algo inesperado)."""
+    return EMPRESAS.get(empresa, EMPRESAS["natura"])
+
 
 # ---------------------------------------------------------------------------
 # Senhas (bcrypt)
@@ -86,9 +108,11 @@ def sair() -> None:
 # ---------------------------------------------------------------------------
 # Tela de login (visual parecido com a tela Natura)
 # ---------------------------------------------------------------------------
-def _css_login() -> None:
-    st.markdown(
-        """
+def _css_login(cor: str = "#EE7B30", cor_hover: str = "#D96C22") -> None:
+    # A cor principal (__COR__/__COR_HOVER__) vem da empresa escolhida: laranja p/
+    # Natura, rosa p/ Avon. Uso .replace em vez de f-string p/ não precisar escapar
+    # todas as chaves { } do CSS.
+    _css = """
         <style>
           /* Cartão central do login */
           .st-key-login_card {
@@ -110,7 +134,7 @@ def _css_login() -> None:
           .st-key-login_card input::-ms-reveal,
           .st-key-login_card input::-ms-clear { display: none !important; }
           .login-logo   { text-align:center; font-size:1.7rem; font-weight:800;
-                           color:#EE7B30; margin: 0 0 .2rem; letter-spacing:.5px; }
+                           color:__COR__; margin: 0 0 .2rem; letter-spacing:.5px; }
           .login-titulo { text-align:center; font-size:1.35rem; font-weight:800;
                           color:#1A1A2E; margin:.1rem 0 .1rem; }
           .login-sub    { text-align:center; color:#7A7A85; margin:0 0 1rem; }
@@ -120,25 +144,28 @@ def _css_login() -> None:
           .st-key-login_card [data-testid="stWidgetLabel"] * {
             color:#3A3A3A !important; font-weight:600 !important;
           }
-          /* Botão principal (Entrar / Solicitar acesso) em laranja Natura */
+          /* Botão principal (Entrar / Solicitar acesso) na cor da empresa */
           .st-key-login_card [data-testid="stFormSubmitButton"] button {
-            background:#EE7B30 !important; border:0 !important; color:#fff !important;
+            background:__COR__ !important; border:0 !important; color:#fff !important;
             font-weight:700 !important;
           }
           .st-key-login_card [data-testid="stFormSubmitButton"] button:hover {
-            background:#D96C22 !important;
+            background:__COR_HOVER__ !important;
           }
         </style>
-        """,
+        """
+    st.markdown(
+        _css.replace("__COR__", cor).replace("__COR_HOVER__", cor_hover),
         unsafe_allow_html=True,
     )
 
 
 @st.cache_data
-def _logo_uri():
-    """Lê o natura_logo.png (na pasta do projeto) e devolve embutido como data-URI,
-    para o logo viajar dentro da própria página (sem depender de arquivo externo)."""
-    caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "natura_logo.png")
+def _logo_uri(arquivo: str = "natura_logo.png"):
+    """Lê um PNG (na pasta do projeto) e devolve embutido como data-URI, para o
+    logo viajar dentro da própria página (sem depender de arquivo externo).
+    Recebe o nome do arquivo p/ servir tanto o logo da Natura quanto o da Avon."""
+    caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), arquivo)
     try:
         with open(caminho, "rb") as f:
             return "data:image/png;base64," + base64.b64encode(f.read()).decode("ascii")
@@ -146,19 +173,83 @@ def _logo_uri():
         return None
 
 
-def tela_login() -> None:
-    _css_login()
+def tela_escolha_empresa() -> None:
+    """1ª tela: escolher qual calendário abrir (Natura ou Avon). Depois de escolher,
+    o app leva ao login com a CARA daquela empresa. Uma conta só serve às duas —
+    quem já está logado troca de empresa aqui SEM novo login (o app.py mantém o
+    auth_user; só zera '_empresa' p/ cair nesta tela)."""
+    # CSS base + cor de cada empresa (borda do cartão e cor do botão).
+    _btn_css = "".join(
+        f".st-key-esc_card_{k}{{border-top:5px solid {v['cor']} !important;}}"
+        f".st-key-esc_btn_{k} button{{background:{v['cor']} !important;border:0 !important;"
+        f"color:#fff !important;font-weight:700 !important;border-radius:10px !important;}}"
+        f".st-key-esc_btn_{k} button:hover{{background:{v['cor_hover']} !important;}}"
+        for k, v in EMPRESAS.items()
+    )
+    st.markdown(
+        "<style>"
+        ".st-key-escolha_wrap{max-width:640px;margin:5vh auto 0;}"
+        ".esc-titulo{text-align:center;font-size:1.6rem;font-weight:800;"
+        "color:#1A1A2E;margin:0 0 .1rem;}"
+        ".esc-sub{text-align:center;color:#7A7A85;font-size:1.05rem;margin:0 0 1.4rem;}"
+        ".st-key-esc_card_natura,.st-key-esc_card_avon{background:#fff;"
+        "border:1px solid #ECECEC;border-radius:16px;padding:1.3rem 1.1rem 1.1rem;"
+        "box-shadow:0 14px 34px rgba(0,0,0,.08);text-align:center;}"
+        ".esc-logo{display:flex;align-items:center;justify-content:center;"
+        "height:92px;margin-bottom:1rem;}"
+        ".esc-logo img{max-width:80%;max-height:80px;height:auto;}"
+        ".esc-logo-txt{height:92px;display:flex;align-items:center;"
+        "justify-content:center;font-size:1.6rem;font-weight:800;}"
+        + _btn_css +
+        "</style>",
+        unsafe_allow_html=True,
+    )
+    with st.container(key="escolha_wrap"):
+        st.markdown(
+            "<div class='esc-titulo'>Bem-vindo(a)! 👋</div>"
+            "<div class='esc-sub'>Qual calendário você quer acessar?</div>",
+            unsafe_allow_html=True,
+        )
+        c1, c2 = st.columns(2)
+        for col, chave in ((c1, "natura"), (c2, "avon")):
+            cfg = EMPRESAS[chave]
+            with col:
+                with st.container(key=f"esc_card_{chave}"):
+                    _logo = _logo_uri(cfg["logo"])
+                    if _logo:
+                        st.markdown(
+                            f"<div class='esc-logo'><img src='{_logo}' "
+                            f"alt='{cfg['nome']}'></div>",
+                            unsafe_allow_html=True,
+                        )
+                    else:  # se faltar o arquivo, cai no emoji + nome
+                        st.markdown(
+                            f"<div class='esc-logo-txt'>{cfg['emoji']} {cfg['nome']}</div>",
+                            unsafe_allow_html=True,
+                        )
+                    if st.button(f"Abrir calendário da {cfg['nome']}",
+                                 key=f"esc_btn_{chave}", width="stretch"):
+                        st.session_state["_empresa"] = chave
+                        st.rerun()
+
+
+def tela_login(empresa: str = "natura") -> None:
+    cfg = empresa_cfg(empresa)
+    _css_login(cfg["cor"], cfg["cor_hover"])
     with st.container(key="login_card"):
-        _logo = _logo_uri()
+        _logo = _logo_uri(cfg["logo"])
         if _logo:
             st.markdown(
                 f"<div style='text-align:center;margin:.2rem 0 .6rem;'>"
-                f"<img src='{_logo}' alt='natura' "
+                f"<img src='{_logo}' alt='{cfg['nome']}' "
                 f"style='width:60%;max-width:210px;height:auto;'></div>",
                 unsafe_allow_html=True,
             )
         else:  # se o arquivo faltar, cai no emoji (nunca quebra a tela)
-            st.markdown("<div class='login-logo'>🌸 natura</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='login-logo'>{cfg['emoji']} {cfg['nome']}</div>",
+                unsafe_allow_html=True,
+            )
         st.markdown(
             "<div class='login-titulo'>Calendário da Grade Comercial</div>",
             unsafe_allow_html=True,
@@ -169,6 +260,12 @@ def tela_login() -> None:
             _form_reset()
         else:
             _form_login()
+        # Voltar à tela de escolha da empresa (antes de logar).
+        if st.button(f"↩︎ Trocar empresa (agora: {cfg['nome']})",
+                     key="trocar_emp_login", width="stretch"):
+            for _m in ("_empresa", "_modo_cadastro", "_modo_reset"):
+                st.session_state.pop(_m, None)
+            st.rerun()
 
 
 def _form_login() -> None:

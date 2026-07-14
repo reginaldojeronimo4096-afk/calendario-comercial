@@ -297,8 +297,19 @@ _desliga_traducao()
 # estiver logado, mostra só a tela de login e para aqui (st.stop). Depois de
 # logado, PAPEL define o que a pessoa pode fazer.
 auth.inicializar()
+
+# 1) Escolha da EMPRESA (Natura x Avon) ANTES do login. Enquanto ninguém escolher,
+# mostra a tela de escolha e para aqui. O botão "Trocar empresa" (barra lateral e
+# login) zera '_empresa' p/ cair de novo nesta tela. Uma conta só serve às duas.
+if not st.session_state.get("_empresa"):
+    auth.tela_escolha_empresa()
+    st.stop()
+EMPRESA = st.session_state["_empresa"]        # "natura" | "avon" — separa os dados
+_EMP_CFG = auth.empresa_cfg(EMPRESA)
+
+# 2) Login (com a CARA da empresa escolhida — logo/cor).
 if not auth.esta_logado():
-    auth.tela_login()
+    auth.tela_login(EMPRESA)
     st.stop()
 
 _U = auth.usuario_atual()
@@ -310,6 +321,12 @@ EH_ADMIN = PAPEL == "admin"                  # só admin gerencia usuários
 with st.sidebar:
     st.markdown(f"### 👤 {_U.get('nome') or _U['usuario']}")
     st.caption(f"Papel: **{PAPEL}**")
+    st.caption(f"Empresa: **{_EMP_CFG['nome']}** {_EMP_CFG['emoji']}")
+    # Trocar empresa: volta à tela de escolha SEM deslogar (conta única serve às duas).
+    if st.button("🔄 Trocar empresa", key="btn_trocar_empresa", width="stretch"):
+        st.session_state.pop("_empresa", None)
+        st.session_state.pop("_view", None)
+        st.rerun()
     if st.button("🚪 Sair", key="btn_sair", width="stretch"):
         auth.sair()
     st.divider()
@@ -322,7 +339,7 @@ with st.sidebar:
 # Se estiver no modo "Promoções", mostra essa página e PARA (não desenha o
 # calendário). O botão "Voltar ao calendário" limpa o _view e volta ao normal.
 if st.session_state.get("_view") == "promocoes":
-    grade.pagina_promocoes(EH_ADMIN)
+    grade.pagina_promocoes(EH_ADMIN, EMPRESA)
     st.stop()
 
 
@@ -438,7 +455,7 @@ def _para_texto(v):
 
 
 def carregar() -> pd.DataFrame:
-    linhas = db.listar_acoes()
+    linhas = db.listar_acoes(EMPRESA)   # EMPRESA (global) = Natura ou Avon
     if not linhas:
         return pd.DataFrame(columns=COLUNAS)
     df = pd.DataFrame(linhas).rename(columns=_MAPA_ACOES)
@@ -466,11 +483,11 @@ def salvar(df: pd.DataFrame) -> None:
         }
         for rec in df.to_dict(orient="records")
     ]
-    db.substituir_acoes(registros)
+    db.substituir_acoes(registros, EMPRESA)
 
 
 def carregar_ciclos() -> pd.DataFrame:
-    linhas = db.listar_ciclos()
+    linhas = db.listar_ciclos(EMPRESA)
     if not linhas:
         return pd.DataFrame(columns=COLUNAS_CICLOS)
     df = pd.DataFrame(linhas).rename(columns=_MAPA_CICLOS)
@@ -492,17 +509,20 @@ def salvar_ciclos(df: pd.DataFrame) -> None:
         }
         for rec in df.to_dict(orient="records")
     ]
-    db.substituir_ciclos(registros)
+    db.substituir_ciclos(registros, EMPRESA)
 
 
 # ----------------------------------------------------------------------------
 # Estado da sessão
 # ----------------------------------------------------------------------------
-if "df" not in st.session_state:
+# Recarrega os dados quando a EMPRESA muda (ou no 1º carregamento). Assim, ao
+# trocar Natura <-> Avon, o calendário passa a mostrar os dados da empresa certa
+# (o que estava em memória era da empresa anterior). '_dados_marca' guarda de qual
+# empresa é o df que está carregado agora.
+if st.session_state.get("_dados_marca") != EMPRESA:
     st.session_state.df = carregar()
-
-if "ciclos_df" not in st.session_state:
     st.session_state.ciclos_df = carregar_ciclos()
+    st.session_state["_dados_marca"] = EMPRESA
 
 
 # ----------------------------------------------------------------------------

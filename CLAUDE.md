@@ -50,7 +50,28 @@ explicar em linguagem simples o que mudou e o que conferir na tela.
   Nunca commitar `.streamlit/secrets.toml` (está no `.gitignore`).
 - `carregar/salvar/carregar_ciclos/salvar_ciclos` mantêm a MESMA assinatura de antes, mas
   por dentro falam com o Supabase (mapas `_MAPA_ACOES`/`_MAPA_CICLOS` traduzem as colunas
-  com acento do app ↔ sem acento do banco). Salvar = apaga tudo e reinsere (volume pequeno).
+  com acento do app ↔ sem acento do banco). Salvar = apaga só as linhas da EMPRESA atual
+  e reinsere (ver Multi-empresa abaixo; volume pequeno).
+
+## Multi-empresa (Natura + Avon) — mesmo app, dados separados
+- **Uma conta só serve às duas** (decisão do Hudson: há quem cuide das duas, ex.: mídia).
+  A tabela `usuarios` NÃO tem marca — é compartilhada.
+- **Fluxo**: `auth.tela_escolha_empresa()` (escolhe Natura/Avon) roda ANTES do login;
+  grava `st.session_state["_empresa"]`. Depois `auth.tela_login(EMPRESA)` mostra o login
+  com a CARA da empresa (logo/cor de `auth.EMPRESAS`). No app.py, `EMPRESA` (global,
+  "natura"|"avon") é definido logo após a escolha e usado em tudo. Botão **"🔄 Trocar
+  empresa"** (barra lateral e login) zera `_empresa` p/ voltar à escolha SEM deslogar.
+- **Separação dos dados = coluna `marca`** nas tabelas `acoes`, `ciclos`, `grade_listas`,
+  `grade_produtos` (default `'natura'` → dados antigos viram Natura; Avon nasce vazia).
+  Em `db.py` TODA função de dados recebe `marca` e filtra por ela; `substituir_*` apaga
+  SÓ as linhas da marca (nunca as da outra empresa). `grade_listas` tem UNIQUE
+  `(marca, lista_nome)` (não mais só `lista_nome`) → upsert com `on_conflict="marca,lista_nome"`.
+  Migração em **`avon_setup.sql`** (roda uma vez no Supabase).
+- Em app.py, `carregar/salvar/...` leem o global `EMPRESA`; ao trocar de empresa,
+  `_dados_marca` != `EMPRESA` dispara recarregar `df`/`ciclos_df`. `grade.pagina_promocoes`
+  recebe `(EH_ADMIN, EMPRESA)`. Branding: `auth.EMPRESAS` (nome/emoji/logo/cor); logos
+  `natura_logo.png` e `avon_logo.png` (este é um recorte de tela — trocar por um logo
+  limpo depois é só substituir o arquivo, mesmo nome).
 
 ## Estrutura do app.py (mapa mental)
 1. **Constantes**: `CATEGORIAS_PADRAO` (faixas), `CORES_CICLO`, `PALETA_CORES` (22 cores da paleta),

@@ -137,12 +137,12 @@ def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
     return resultado
 
 
-def salvar_grade(file_bytes: bytes, nome_arquivo: str) -> list:
-    """Lê o arquivo e grava no Supabase. Retorna [(tipo, n_produtos), ...]."""
+def salvar_grade(file_bytes: bytes, nome_arquivo: str, marca: str = "natura") -> list:
+    """Lê o arquivo e grava no Supabase, na empresa 'marca'. Retorna [(tipo, n), ...]."""
     resumo = []
     for meta, produtos in ler_grade(file_bytes, nome_arquivo):
-        db.grade_upsert_lista(meta)
-        db.grade_substituir_produtos(meta["lista_nome"], produtos)
+        db.grade_upsert_lista(meta, marca)
+        db.grade_substituir_produtos(meta["lista_nome"], produtos, marca)
         resumo.append((meta["tipo"], meta["total_skus"]))
     return resumo
 
@@ -161,8 +161,8 @@ def _excel_bytes(df: pd.DataFrame) -> bytes:
     return buffer.getvalue()
 
 
-def _painel_apagar_promocoes() -> None:
-    """Expander (admin) p/ APAGAR promoções: por seleção OU todas, com confirmação."""
+def _painel_apagar_promocoes(marca: str = "natura") -> None:
+    """Expander (admin) p/ APAGAR promoções DESTA empresa: por seleção OU todas."""
     # Cabeçalho do expander em VERMELHO (zona de perigo), sem afetar o "Atualizar
     # Grade": envolvo num container com chave 'exp_apagar' p/ mirar só neste expander.
     st.markdown(
@@ -177,7 +177,7 @@ def _painel_apagar_promocoes() -> None:
     )
     with st.container(key="exp_apagar"):
         with st.expander("🗑️ Apagar promoções", expanded=False):
-            _listas = db.grade_listar_listas()
+            _listas = db.grade_listar_listas(marca)
             if not _listas:
                 st.caption("Não há promoções para apagar.")
                 return
@@ -214,7 +214,7 @@ def _painel_apagar_promocoes() -> None:
                     if st.button("✅ Sim, apagar", key="ap_sel_sim", type="primary",
                                  width="stretch"):
                         for _d in _sel:
-                            db.grade_apagar_lista(_map[_d])
+                            db.grade_apagar_lista(_map[_d], marca)
                         st.session_state.pop("_conf_ap_sel", None)
                         st.session_state.pop("_grade_sel", None)
                         st.session_state["_flash_grade"] = f"{len(_sel)} promoção(ões) apagada(s)!"
@@ -232,7 +232,7 @@ def _painel_apagar_promocoes() -> None:
                     st.warning(f"Apagar TODAS as {len(_listas)} promoções?")
                     if st.button("✅ Sim, apagar todas", key="ap_all_sim", type="primary",
                                  width="stretch"):
-                        db.grade_apagar_todas()
+                        db.grade_apagar_todas(marca)
                         st.session_state.pop("_conf_ap_todas", None)
                         st.session_state.pop("_grade_sel", None)
                         st.session_state["_flash_grade"] = "Todas as promoções foram apagadas!"
@@ -245,7 +245,7 @@ def _painel_apagar_promocoes() -> None:
                     st.rerun()
 
 
-def pagina_promocoes(eh_admin: bool = False) -> None:
+def pagina_promocoes(eh_admin: bool = False, marca: str = "natura") -> None:
     st.title("📑 Promoções da Grade")
     if st.session_state.get("_flash_grade"):     # aviso após apagar (sobrevive ao rerun)
         st.success(st.session_state.pop("_flash_grade"))
@@ -266,7 +266,7 @@ def pagina_promocoes(eh_admin: bool = False) -> None:
             if arq is not None and st.button("Processar e salvar", type="primary", key="btn_proc"):
                 try:
                     with st.spinner("Lendo a planilha e salvando no banco..."):
-                        resumo = salvar_grade(arq.getvalue(), arq.name)
+                        resumo = salvar_grade(arq.getvalue(), arq.name, marca)
                     if resumo:
                         st.success(f"✅ {len(resumo)} promoção(ões) atualizada(s)!")
                         for tipo, n in resumo:
@@ -289,19 +289,19 @@ def pagina_promocoes(eh_admin: bool = False) -> None:
                         st.error(f"Não consegui ler o arquivo. Detalhe: {e}")
 
         # Painel de APAGAR promoções (seleção ou todas) — só admin.
-        _painel_apagar_promocoes()
+        _painel_apagar_promocoes(marca)
 
     st.divider()
 
     sel = st.session_state.get("_grade_sel")
     if sel:
-        _mostra_produtos(sel)
+        _mostra_produtos(sel, marca)
     else:
-        _mostra_lista_promocoes()
+        _mostra_lista_promocoes(marca)
 
 
-def _mostra_lista_promocoes() -> None:
-    listas = db.grade_listar_listas()
+def _mostra_lista_promocoes(marca: str = "natura") -> None:
+    listas = db.grade_listar_listas(marca)
     if not listas:
         st.info("Nenhuma promoção cadastrada ainda. "
                 + ("Suba uma Grade acima. ☝️" if True else ""))
@@ -372,12 +372,12 @@ def _mostra_lista_promocoes() -> None:
         )
 
 
-def _mostra_produtos(lista_nome: str) -> None:
+def _mostra_produtos(lista_nome: str, marca: str = "natura") -> None:
     if st.button("← Voltar às promoções", key="voltar_prom"):
         st.session_state.pop("_grade_sel", None)
         st.rerun()
 
-    L = next((x for x in db.grade_listar_listas() if x["lista_nome"] == lista_nome), None)
+    L = next((x for x in db.grade_listar_listas(marca) if x["lista_nome"] == lista_nome), None)
     if L:
         st.subheader(_tipo_amigavel(lista_nome))
         # Descrição em faixa destacada (fonte maior + texto escuro + barra azul),
@@ -394,7 +394,7 @@ def _mostra_produtos(lista_nome: str) -> None:
             unsafe_allow_html=True,
         )
 
-    produtos = db.grade_listar_produtos(lista_nome)
+    produtos = db.grade_listar_produtos(lista_nome, marca)
     if not produtos:
         st.info("Esta promoção está sem produtos.")
         return
