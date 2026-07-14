@@ -237,7 +237,7 @@ def tela_escolha_empresa() -> None:
         st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
         _cs1, _csm, _cs2 = st.columns([2, 1.2, 2])
         with _csm:
-            if st.button("↩︎ Sair", key="sair_escolha", width="stretch"):
+            if st.button("← Login", key="sair_escolha", width="stretch"):
                 sair()
 
 
