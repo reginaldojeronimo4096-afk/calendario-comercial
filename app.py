@@ -1583,12 +1583,20 @@ with st.expander(_titulo_painel, expanded=False):
     # (inclui todo valor presente para o SelectboxColumn não gerar erro).
     _cat_opcoes = sorted(set(CATEGORIAS_PADRAO) | set(editor_df["Categoria"]))
 
+    # Colunas mostradas conforme o papel: EDITOR/ADMIN veem "Excluir" + hex "Cor"
+    # (ferramentas de edição). LEITOR vê uma visão LIMPA de só leitura, SEM a coluna
+    # "Excluir" (não passa a ideia de que pode apagar) e SEM o hex — só a corzinha.
+    if PODE_EDITAR:
+        _ordem_cols = ["Excluir", "Ação", "Categoria", "Início", "Fim", "🎨", "Cor", "Detalhes"]
+    else:
+        _ordem_cols = ["Ação", "Categoria", "Início", "Fim", "🎨", "Detalhes"]
+
     editado = st.data_editor(
         editor_df,
         num_rows="fixed",  # sem a seleção embutida do Streamlit (usamos a coluna "Excluir")
         disabled=not PODE_EDITAR,  # leitor: tabela só leitura (não altera nada)
         width="stretch",
-        column_order=["Excluir", "Ação", "Categoria", "Início", "Fim", "🎨", "Cor", "Detalhes"],
+        column_order=_ordem_cols,
         column_config={
             "Excluir": st.column_config.CheckboxColumn(
                 "🗑️ Excluir",
@@ -1625,22 +1633,27 @@ with st.expander(_titulo_painel, expanded=False):
             st.rerun()
 
     with col_b:
-        # CSV (Google Sheets / qualquer planilha) — mesmas colunas do Excel, sem
-        # "Cor". Datas em DD/MM/AAAA e BOM (utf-8-sig) p/ os acentos abrirem certo.
-        df_csv = st.session_state.df.drop(columns=["Cor"], errors="ignore").copy()
-        for _dcol in ("Início", "Fim"):
-            if _dcol in df_csv.columns:
-                df_csv[_dcol] = pd.to_datetime(
-                    df_csv[_dcol], errors="coerce"
-                ).dt.strftime("%d/%m/%Y")
-        st.download_button(
-            "⬇️ Baixar CSV",
-            data=df_csv.to_csv(index=False).encode("utf-8-sig"),
-            file_name="acoes.csv",
-            mime="text/csv",
-            key="dl_csv",
-            help="Abre no Google Sheets (Arquivo → Importar) e em qualquer planilha.",
-        )
+        # Sem NENHUMA ação neste calendário: não faz sentido baixar arquivo vazio —
+        # mostra um aviso no lugar dos botões (CSV aqui e Excel na coluna ao lado).
+        if st.session_state.df.empty:
+            st.caption("📭 Nenhuma ação cadastrada — nada para baixar.")
+        else:
+            # CSV (Google Sheets / qualquer planilha) — mesmas colunas do Excel, sem
+            # "Cor". Datas em DD/MM/AAAA e BOM (utf-8-sig) p/ os acentos abrirem certo.
+            df_csv = st.session_state.df.drop(columns=["Cor"], errors="ignore").copy()
+            for _dcol in ("Início", "Fim"):
+                if _dcol in df_csv.columns:
+                    df_csv[_dcol] = pd.to_datetime(
+                        df_csv[_dcol], errors="coerce"
+                    ).dt.strftime("%d/%m/%Y")
+            st.download_button(
+                "⬇️ Baixar CSV",
+                data=df_csv.to_csv(index=False).encode("utf-8-sig"),
+                file_name="acoes.csv",
+                mime="text/csv",
+                key="dl_csv",
+                help="Abre no Google Sheets (Arquivo → Importar) e em qualquer planilha.",
+            )
 
     with col_c:
         # Gera o arquivo Excel (.xlsx) em memória, já formatado, para download.
@@ -1701,13 +1714,14 @@ with st.expander(_titulo_painel, expanded=False):
 
             ws.freeze_panes = "A2"  # cabeçalho fixo ao rolar
 
-        st.download_button(
-            "⬇️ Baixar Excel",
-            data=buffer.getvalue(),
-            file_name="acoes.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="dl_excel",
-        )
+        if not st.session_state.df.empty:
+            st.download_button(
+                "⬇️ Baixar Excel",
+                data=buffer.getvalue(),
+                file_name="acoes.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key="dl_excel",
+            )
 
     with col_d:
         # Limpar TODO o calendário — no canto direito, discreto. Uso raro (recomeçar
