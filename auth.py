@@ -250,7 +250,17 @@ def tela_login(empresa=None) -> None:
         _css_login(cfg["cor"], cfg["cor_hover"])
         _logo = _logo_uri(cfg["logo"])
     else:
-        _css_login("#1E88E5", "#155FA0")   # azul neutro (nem laranja, nem rosa)
+        # Login NEUTRO: base laranja + botão em DEGRADÊ laranja->rosa (as 2 marcas).
+        _css_login("#EE7B30", "#D96C22")
+        st.markdown(
+            "<style>"
+            ".st-key-login_card [data-testid='stFormSubmitButton'] button{"
+            "background:linear-gradient(90deg,#EE7B30,#E4007C) !important;}"
+            ".st-key-login_card [data-testid='stFormSubmitButton'] button:hover{"
+            "background:linear-gradient(90deg,#D96C22,#B4004E) !important;}"
+            "</style>",
+            unsafe_allow_html=True,
+        )
         _logo = None
     with st.container(key="login_card"):
         if _logo:
@@ -264,10 +274,18 @@ def tela_login(empresa=None) -> None:
                 "<div class='login-titulo'>Calendário da Grade Comercial</div>",
                 unsafe_allow_html=True,
             )
-        else:  # login NEUTRO: título do app + subtítulo deixando claro que serve às duas
+        else:  # login NEUTRO: "Grade Comercial" (preto) · Natura (laranja) & Avon (rosa)
             st.markdown(
-                "<div class='login-logo'>📅 Calendário de Ações</div>"
-                "<div class='login-titulo'>Grade Comercial · Natura &amp; Avon</div>",
+                "<div style='text-align:center;font-size:1.7rem;font-weight:800;"
+                "color:#1A1A2E;margin:0 0 .15rem;letter-spacing:.3px;'>"
+                "📅 Calendário de Ações</div>"
+                "<div style='text-align:center;font-size:1.2rem;font-weight:800;"
+                "margin:.05rem 0 .1rem;'>"
+                "<span style='color:#1A1A2E;'>Grade Comercial</span> "
+                "<span style='color:#C0C4CC;'>·</span> "
+                "<span style='color:#EE7B30;'>Natura</span> "
+                "<span style='color:#1A1A2E;'>&amp;</span> "
+                "<span style='color:#E4007C;'>Avon</span></div>",
                 unsafe_allow_html=True,
             )
         if st.session_state.get("_modo_cadastro"):
