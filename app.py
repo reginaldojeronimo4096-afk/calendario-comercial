@@ -1055,6 +1055,10 @@ fig.update_traces(
     insidetextanchor="middle",
     textangle=0,                # nunca gira o texto (sem escrita na vertical)
     cliponaxis=False,           # deixa o texto que sai da barra aparecer inteiro
+    # Quando o nome NÃO cabe e vaza pra FORA da barra (barra curta), o texto sai
+    # em cinza escuro — legível no fundo branco (a cor de dentro é clara p/ contrastar
+    # com a barra colorida, e ficava apagada quando caía fora).
+    outsidetextfont=dict(color="#333333", size=13),
     hovertemplate=(
         "<b>%{text}</b><br>"
         "Período: %{customdata[1]} → %{customdata[2]}"
@@ -1326,6 +1330,7 @@ fig_destaque = px.timeline(
 )
 fig_destaque.update_traces(
     textposition="auto", insidetextanchor="middle", textangle=0, cliponaxis=False,
+    outsidetextfont=dict(color="#333333", size=13),   # texto que vaza p/ fora = cinza escuro
     hovertemplate=(
         "<b>%{text}</b><br>"
         "Período: %{customdata[1]} → %{customdata[2]}"
