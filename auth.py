@@ -497,10 +497,22 @@ def _css_usuarios() -> None:
             min-height: 30px !important; height: 30px !important;
             font-size: 0.82rem !important;
           }
+          /* CELULAR: as colunas do Streamlit NÃO quebram sozinhas — em tela
+             estreita elas viram tiras de ~40px e o texto desce letra por letra.
+             Aqui o cartão ganha `flex-wrap` + uma largura MÍNIMA por coluna:
+             no PC tudo cabe numa linha (nada muda); no celular as colunas
+             passam a pular para a linha de baixo, inteiras e legíveis. */
+          div[class*="st-key-ucard_"] div[data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            row-gap: 8px !important;
+          }
+          div[class*="st-key-ucard_"] div[data-testid="stColumn"] {
+            min-width: 96px !important;
+          }
           /* Cartão de cada usuário: respiro menor que o padrão do Streamlit. */
           .u-card-nome { font-size: 0.78rem; color: #6B7280; margin-top: -2px; }
           .u-email { font-weight: 700; font-size: 0.92rem; color: #1F2937;
-                     word-break: break-all; }
+                     overflow-wrap: anywhere; }
           .u-selo { display: inline-block; padding: 2px 10px; border-radius: 999px;
                     font-size: 0.72rem; font-weight: 800; letter-spacing: .3px; }
           .u-ativo    { background: #E9F7EF; color: #1B7A32; border: 1px solid #21A038; }
@@ -569,7 +581,9 @@ def dialog_gerenciar_usuarios() -> None:
     for u in usuarios:
         uid, status = u["id"], u.get("status", "")
         sou_eu = uid == eu.get("id")
-        with st.container(border=True):
+        # key no container = "gancho" p/ o CSS que faz as colunas quebrarem
+        # em linhas no celular (ver _css_usuarios).
+        with st.container(border=True, key=f"ucard_{uid}"):
             c_info, c_papel, c_status = st.columns(_PROP, vertical_alignment="center")
             with c_info:
                 # HTML (não markdown) de propósito: o markdown do Streamlit
