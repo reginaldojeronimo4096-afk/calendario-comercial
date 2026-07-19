@@ -5,6 +5,7 @@ Preencha os campos, e a ação é desenhada como um bloco colorido no período c
 Dados guardados no Supabase (banco online) — ver db.py. Login e papéis em auth.py.
 """
 
+import html as _html
 import io
 import os
 import textwrap
@@ -245,6 +246,39 @@ st.markdown(
         font-weight: 700; font-size: 0.85rem; color: #155FA0;
         margin-left: 6px; white-space: nowrap;
       }
+      /* ---- Cartão de quem está logado (topo da barra lateral) ----
+         Antes: "### 👤 Nome" (fonte grande que quebrava em 2 linhas) + duas
+         legendas soltas. Agora: avatar com as iniciais na cor da empresa,
+         nome em 1 linha (corta com "…" se for comprido) e o papel/empresa
+         como pílulas. */
+      .sb-user { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; }
+      .sb-avatar {
+        flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%;
+        color: #FFFFFF; font-weight: 800; font-size: 0.92rem;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,.25);
+      }
+      .sb-user-txt { min-width: 0; }   /* deixa o text-overflow funcionar no flex */
+      .sb-nome {
+        font-weight: 700; font-size: 1rem; line-height: 1.2; color: #1F2937;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .sb-email {
+        font-size: 0.72rem; color: #6B7280; line-height: 1.3;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .sb-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 2px; }
+      .sb-pill {
+        display: inline-block; padding: 2px 9px; border-radius: 999px;
+        font-size: 0.72rem; font-weight: 700; border: 1px solid;
+      }
+      .sb-pill-papel {
+        background: #F0F2F6; color: #4B5563; border-color: #D1D5DB;
+        text-transform: capitalize;
+      }
+      .sb-pill-emp { background: #FFFFFF; }
+      /* Divisores da barra lateral mais discretos (eram linhas fortes). */
+      [data-testid="stSidebar"] hr { margin: 0.7rem 0 !important; opacity: .45; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -317,24 +351,49 @@ PAPEL = _U["papel"]
 PODE_EDITAR = PAPEL in ("admin", "editor")   # admin/editor mexem no calendário
 EH_ADMIN = PAPEL == "admin"                  # só admin gerencia usuários
 
-# Barra lateral: quem está logado + Promoções + botão de sair.
+# Barra lateral: cartão de quem está logado + navegação + sair.
+# Ordem pensada por FREQUÊNCIA de uso: primeiro o que se usa direto (Promoções),
+# depois o eventual (Trocar empresa) e por último o "Sair" (vermelho, no fim).
+_nome_exib = _U.get("nome") or _U["usuario"]
+# Iniciais p/ o avatar (ex.: "Reginaldo Jeronimo" -> "RJ"). Se só houver e-mail,
+# usa a 1ª letra — nunca fica vazio.
+_partes = [p for p in str(_nome_exib).replace(".", " ").split() if p]
+_iniciais = ("".join(p[0] for p in _partes[:2]) or "?").upper()
+
 with st.sidebar:
-    st.markdown(f"### 👤 {_U.get('nome') or _U['usuario']}")
-    st.caption(f"Papel: **{PAPEL}**")
-    st.caption(f"Empresa: **{_EMP_CFG['nome']}** {_EMP_CFG['emoji']}")
-    # Trocar empresa: volta à tela de escolha SEM deslogar (conta única serve às duas).
-    if st.button("🔄 Trocar empresa", key="btn_trocar_empresa", width="stretch"):
-        st.session_state.pop("_empresa", None)
-        st.session_state.pop("_view", None)
-        st.rerun()
-    if st.button("🚪 Sair", key="btn_sair", width="stretch"):
-        auth.sair()
+    st.markdown(
+        f"""
+        <div class="sb-user">
+          <div class="sb-avatar" style="background:{_EMP_CFG['cor']}">{_iniciais}</div>
+          <div class="sb-user-txt">
+            <div class="sb-nome" title="{_html.escape(str(_nome_exib))}">
+              {_html.escape(str(_nome_exib))}</div>
+            <div class="sb-email">{_html.escape(_U.get('usuario', ''))}</div>
+          </div>
+        </div>
+        <div class="sb-pills">
+          <span class="sb-pill sb-pill-papel">{_html.escape(PAPEL)}</span>
+          <span class="sb-pill sb-pill-emp"
+                style="border-color:{_EMP_CFG['cor']};color:{_EMP_CFG['cor']}">
+            {_EMP_CFG['emoji']} {_html.escape(_EMP_CFG['nome'])}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.divider()
     # Abre a tela de consulta das promoções (Grade de Ativação) — para todos.
     if st.button("📑 Promoções", key="btn_promocoes", width="stretch"):
         st.session_state["_view"] = "promocoes"
         st.session_state.pop("_grade_sel", None)
         st.rerun()
+    # Trocar empresa: volta à tela de escolha SEM deslogar (conta única serve às duas).
+    if st.button("🔄 Trocar empresa", key="btn_trocar_empresa", width="stretch"):
+        st.session_state.pop("_empresa", None)
+        st.session_state.pop("_view", None)
+        st.rerun()
+    st.divider()
+    if st.button("🚪 Sair", key="btn_sair", width="stretch"):
+        auth.sair()
 
 # Se estiver no modo "Promoções", mostra essa página e PARA (não desenha o
 # calendário). O botão "Voltar ao calendário" limpa o _view e volta ao normal.

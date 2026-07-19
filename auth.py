@@ -13,6 +13,7 @@ Fluxo de cadastro: a pessoa clica em "Criar conta" no login -> a conta entra com
 Senhas ficam guardadas com bcrypt (embaralhadas), nunca em texto puro.
 """
 import base64
+import html as _html
 import os
 import secrets as _secrets
 
@@ -472,8 +473,49 @@ def _form_reset() -> None:
 # Tela "Gerenciar Usuários" (só admin)
 # ---------------------------------------------------------------------------
 @st.dialog("👥 Gerenciar Usuários", width="large")
+def _css_usuarios() -> None:
+    """Deixa a lista de usuários COMPACTA: botões pequenos numa linha só,
+    selectbox de papel menor e um selo colorido de status.
+
+    Os botões são mirados por `[class*="st-key-ubtn_"]` — TODA chave de botão
+    desta tela começa com `ubtn_`, então um seletor só pega os quatro. (Nunca
+    mirar em `st-emotion-cache-*`: muda a cada build do Streamlit.)"""
+    st.markdown(
+        """
+        <style>
+          /* Botões de ação do usuário: compactos, texto curto, sem quebrar. */
+          div[class*="st-key-ubtn_"] button {
+            padding: 2px 6px !important;
+            min-height: 30px !important;
+            height: 30px !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+          }
+          /* Selectbox do papel: mesma altura dos botões, fonte menor. */
+          div[class*="st-key-papel_"] div[data-baseweb="select"] > div {
+            min-height: 30px !important; height: 30px !important;
+            font-size: 0.82rem !important;
+          }
+          /* Cartão de cada usuário: respiro menor que o padrão do Streamlit. */
+          .u-card-nome { font-size: 0.78rem; color: #6B7280; margin-top: -2px; }
+          .u-email { font-weight: 700; font-size: 0.92rem; color: #1F2937;
+                     word-break: break-all; }
+          .u-selo { display: inline-block; padding: 2px 10px; border-radius: 999px;
+                    font-size: 0.72rem; font-weight: 800; letter-spacing: .3px; }
+          .u-ativo    { background: #E9F7EF; color: #1B7A32; border: 1px solid #21A038; }
+          .u-pendente { background: #FFF7E6; color: #A66B00; border: 1px solid #F5A623; }
+          .u-revogado { background: #FDECEC; color: #C0392B; border: 1px solid #E8463A; }
+          .u-conf { font-size: 0.78rem; font-weight: 700; color: #C0392B; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def dialog_gerenciar_usuarios() -> None:
     st.caption("Aprove cadastros, defina papéis, revogue acessos e resete senhas.")
+    _css_usuarios()
 
     eu = usuario_atual() or {}
     usuarios = db.listar_usuarios()
@@ -492,8 +534,11 @@ def dialog_gerenciar_usuarios() -> None:
             f"Senha redefinida para **{_nova[0]}**. Anote e repasse: `{_nova[1]}`"
         )
 
-    _BADGE = {
-        "pendente": "🟡 PENDENTE", "ativo": "🟢 ATIVO", "revogado": "🔴 REVOGADO",
+    # Selo de status: pílula colorida (HTML) — mais legível que a bolinha emoji.
+    _SELO = {
+        "pendente": '<span class="u-selo u-pendente">PENDENTE</span>',
+        "ativo": '<span class="u-selo u-ativo">ATIVO</span>',
+        "revogado": '<span class="u-selo u-revogado">REVOGADO</span>',
     }
 
     # Busca por nome OU e-mail — prático quando há muitos usuários. Filtra ao vivo
@@ -515,66 +560,97 @@ def dialog_gerenciar_usuarios() -> None:
             st.info("Nenhum usuário encontrado. Tente outro nome ou e-mail. 🙂")
             return
 
+    # Cada usuário vira um CARTÃO de 2 linhas (era ~3 linhas de botões soltos):
+    #   linha 1: e-mail            | papel | selo de status
+    #   linha 2: nome              | os 4 botões de ação, compactos
+    # As colunas das duas linhas usam as MESMAS proporções, então tudo alinha.
+    _PROP = [3.4, 1.9, 1.5]                    # linha 1: info | papel | selo
+    _PROP_ACOES = [3.4, 0.85, 0.85, 0.85, 0.85]  # linha 2: info | 4 botões
     for u in usuarios:
         uid, status = u["id"], u.get("status", "")
         sou_eu = uid == eu.get("id")
-        st.divider()
-        c_info, c_papel, c_status, c_acoes = st.columns([2.5, 2, 1.6, 3])
-        with c_info:
-            st.markdown(f"**{u.get('usuario','')}**")
-            st.caption(u.get("nome", "") or "—")
-        with c_papel:
-            papel_sel = st.selectbox(
-                "Papel", PAPEIS,
-                index=PAPEIS.index(u["papel"]) if u.get("papel") in PAPEIS else 2,
-                key=f"papel_{uid}", label_visibility="collapsed",
+        with st.container(border=True):
+            c_info, c_papel, c_status = st.columns(_PROP, vertical_alignment="center")
+            with c_info:
+                # HTML (não markdown) de propósito: o markdown do Streamlit
+                # transforma e-mail em link azul sublinhado — aqui é só texto.
+                st.markdown(
+                    f'<div class="u-email">{_html.escape(u.get("usuario", ""))}</div>',
+                    unsafe_allow_html=True,
+                )
+            with c_papel:
+                papel_sel = st.selectbox(
+                    "Papel", PAPEIS,
+                    index=PAPEIS.index(u["papel"]) if u.get("papel") in PAPEIS else 2,
+                    key=f"papel_{uid}", label_visibility="collapsed",
+                )
+            with c_status:
+                st.markdown(_SELO.get(status, status), unsafe_allow_html=True)
+
+            c_nome, b1, b2, b3, b4 = st.columns(
+                _PROP_ACOES, vertical_alignment="center"
             )
-        with c_status:
-            st.write(_BADGE.get(status, status))
-        with c_acoes:
-            b1, b2 = st.columns(2)
-            # Aprovar (pendente) / Salvar papel (ativo) / Reativar (revogado)
+            with c_nome:
+                st.markdown(
+                    f'<div class="u-card-nome">'
+                    f'{_html.escape(u.get("nome", "") or "—")}</div>',
+                    unsafe_allow_html=True,
+                )
+
+            # b1 — Aprovar (pendente) / Salvar papel (ativo) / Reativar (revogado)
             if status == "pendente":
-                if b1.button("✅ Aprovar", key=f"aprovar_{uid}", width="stretch"):
+                if b1.button("✅ Aprovar", key=f"ubtn_aprovar_{uid}",
+                             width="stretch", help="Aprovar este cadastro"):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
                     st.rerun()
             elif status == "ativo":
-                if b1.button("💾 Papel", key=f"papel_btn_{uid}", width="stretch"):
+                if b1.button("💾 Papel", key=f"ubtn_papel_{uid}", width="stretch",
+                             help="Salvar o papel escolhido ao lado"):
                     db.atualizar_usuario(uid, {"papel": papel_sel})
                     st.rerun()
             elif status == "revogado":
-                if b1.button("♻️ Reativar", key=f"reativar_{uid}", width="stretch"):
+                if b1.button("♻️ Reativar", key=f"ubtn_reativar_{uid}",
+                             width="stretch", help="Devolver o acesso"):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
                     st.rerun()
 
-            # Revogar (não deixa revogar a própria conta, p/ não se trancar de fora)
+            # b2 — Revogar (não deixa revogar a própria conta, p/ não se trancar de fora)
             if status != "revogado" and not sou_eu:
-                if b2.button("🚫 Revogar", key=f"revogar_{uid}", width="stretch"):
+                if b2.button("🚫 Revogar", key=f"ubtn_revogar_{uid}", width="stretch",
+                             help="Tirar o acesso (a conta continua na lista)"):
                     db.atualizar_usuario(uid, {"status": "revogado"})
                     st.rerun()
 
-            # Resetar senha: gera uma temporária e mostra uma vez.
-            if st.button("🔑 Resetar senha", key=f"reset_{uid}", width="stretch"):
+            # Enquanto confirma a remoção, b3/b4 viram "Sim/Não" (abaixo) —
+            # o botão de senha sai de cena p/ não empilhar dois na mesma coluna.
+            confirmando = bool(st.session_state.get(f"_conf_rm_{uid}"))
+
+            # b3 — Resetar senha: gera uma temporária e mostra uma vez.
+            if not confirmando and b3.button(
+                    "🔑 Senha", key=f"ubtn_reset_{uid}", width="stretch",
+                    help="Gerar uma senha temporária para repassar"):
                 temp = _secrets.token_urlsafe(6)
                 db.atualizar_usuario(uid, {"senha_hash": _hash(temp)})
                 st.session_state["_senha_temp"] = (u.get("usuario", ""), temp)
                 st.rerun()
 
-            # Remover DE VEZ (diferente de 'revogar': apaga a linha da lista).
+            # b4 — Remover DE VEZ (diferente de 'revogar': apaga a linha da lista).
             # Pede confirmação e nunca deixa apagar a própria conta (p/ o admin
             # não se trancar de fora). Se a conta for um admin dos secrets iniciais,
             # ela renasce no próximo carregamento — tem de sair também dos secrets.
+            # Na confirmação, o "Sim/Não" ocupa os lugares de b3/b4 (mesma linha,
+            # sem empurrar o cartão para baixo).
             if not sou_eu:
-                if st.session_state.get(f"_conf_rm_{uid}"):
-                    st.caption("Remover mesmo?")
-                    r1, r2 = st.columns(2)
-                    if r1.button("Sim", key=f"rm_sim_{uid}", width="stretch"):
+                if confirmando:
+                    if b3.button("Sim, remover", key=f"ubtn_rmsim_{uid}",
+                                 width="stretch", type="primary"):
                         db.remover_usuario(uid)
                         st.session_state.pop(f"_conf_rm_{uid}", None)
                         st.rerun()
-                    if r2.button("Não", key=f"rm_nao_{uid}", width="stretch"):
+                    if b4.button("Não", key=f"ubtn_rmnao_{uid}", width="stretch"):
                         st.session_state.pop(f"_conf_rm_{uid}", None)
                         st.rerun()
-                elif st.button("🗑️ Remover", key=f"rm_{uid}", width="stretch"):
+                elif b4.button("🗑️ Remover", key=f"ubtn_rm_{uid}", width="stretch",
+                               help="Apagar a conta da lista (não dá para desfazer)"):
                     st.session_state[f"_conf_rm_{uid}"] = True
                     st.rerun()
