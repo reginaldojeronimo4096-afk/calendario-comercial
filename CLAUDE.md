@@ -141,6 +141,23 @@ sem teto — e uma major/minor nova pode ressuscitar o segfault. Se voltar, olhe
 versão "novinha" apareceu (`Found X version Y`) e trave abaixo dela. Reboot simples NÃO
 resolve (precisa reinstalar). numpy NÃO dá p/ travar <2 (Python 3.14 exige numpy 2.x).
 
+## Gotcha: inserir função ANTES de uma função decorada (`@st.dialog`)
+O decorador mora numa linha SOLTA acima do `def`. Ao inserir uma função nova logo
+antes de uma função decorada, ela entra ENTRE o decorador e o `def` original — o
+decorador gruda na função errada. Já aconteceu (jul/2026): `_css_usuarios` foi
+criada antes de `dialog_gerenciar_usuarios` e roubou o `@st.dialog` → o pop-up
+abria VAZIO e a lista de usuários era desenhada solta, dentro da coluna estreita
+do botão "Usuários" (parecia bug de responsividade/celular, mas não era).
+**Sempre conferir `grep -n -B1 "^def nome_da_funcao" arquivo.py` depois de inserir.**
+
+## Rerun DENTRO de `@st.dialog`: usar `scope="fragment"`
+`st.rerun()` normal recarrega a página inteira e **fecha o pop-up**. Em
+`auth.dialog_gerenciar_usuarios` isso fazia a confirmação de "Remover" e a senha
+temporária só aparecerem ao REABRIR a tela. Como `@st.dialog` é um fragmento,
+`st.rerun(scope="fragment")` redesenha só o pop-up e ele continua aberto (8 usos
+lá). **NÃO confundir com o histórico do `removeChild` abaixo**: já se suspeitou do
+rerun de fragmento, mas a causa era a tradução do Chrome — fragmento é seguro.
+
 ## Gotcha crítico: `removeChild` no frontend (Google Tradutor)
 `NotFoundError: Failed to execute 'removeChild' on 'Node'` a CADA clique, no app inteiro =
 **tradução automática do navegador** (Google Tradutor do Chrome) reescrevendo o DOM e brigando
