@@ -472,7 +472,6 @@ def _form_reset() -> None:
 # ---------------------------------------------------------------------------
 # Tela "Gerenciar Usuários" (só admin)
 # ---------------------------------------------------------------------------
-@st.dialog("👥 Gerenciar Usuários", width="large")
 def _css_usuarios() -> None:
     """Deixa a lista de usuários COMPACTA: botões pequenos numa linha só,
     selectbox de papel menor e um selo colorido de status.
@@ -525,6 +524,7 @@ def _css_usuarios() -> None:
     )
 
 
+@st.dialog("👥 Gerenciar Usuários", width="large")
 def dialog_gerenciar_usuarios() -> None:
     st.caption("Aprove cadastros, defina papéis, revogue acessos e resete senhas.")
     _css_usuarios()
