@@ -202,6 +202,16 @@ def tela_escolha_empresa() -> None:
         ".esc-logo img{max-width:80%;max-height:80px;height:auto;}"
         ".esc-logo-txt{height:92px;display:flex;align-items:center;"
         "justify-content:center;font-size:1.6rem;font-weight:800;}"
+        # "Sair da conta": botão DISCRETO (fantasma) — os dois cartões coloridos
+        # são a ação principal desta tela; este é a saída secundária, então tem
+        # borda leve e texto cinza, ganhando cor (vermelho suave) só no hover.
+        ".st-key-sair_escolha button{background:transparent !important;"
+        "border:1px solid #E3E3E8 !important;color:#8A8A95 !important;"
+        "font-size:.86rem !important;font-weight:600 !important;"
+        "border-radius:999px !important;padding:.3rem .9rem !important;"
+        "min-height:34px !important;transition:all .15s ease !important;}"
+        ".st-key-sair_escolha button:hover{background:#FDECEC !important;"
+        "border-color:#E8463A !important;color:#C0392B !important;}"
         + _btn_css +
         "</style>",
         unsafe_allow_html=True,
@@ -234,11 +244,15 @@ def tela_escolha_empresa() -> None:
                         st.session_state["_empresa"] = chave
                         st.rerun()
 
-        # Sair (caso queira trocar de conta a partir daqui).
-        st.markdown("<div style='height:.5rem'></div>", unsafe_allow_html=True)
-        _cs1, _csm, _cs2 = st.columns([2, 1.2, 2])
+        # Sair (caso queira trocar de conta a partir daqui). O rótulo diz
+        # "Sair da conta" — e NÃO "← Login" — porque a ação é DESLOGAR: quem
+        # está nesta tela já entrou, e o "Login" antigo dava a impressão de ser
+        # só um "voltar", fazendo perder a sessão sem querer.
+        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+        _cs1, _csm, _cs2 = st.columns([1.6, 1.8, 1.6])
         with _csm:
-            if st.button("← Login", key="sair_escolha", width="stretch"):
+            if st.button("🚪 Sair da conta", key="sair_escolha", width="stretch",
+                         help="Encerra a sessão e volta para a tela de login"):
                 sair()
 
 
@@ -491,9 +505,12 @@ def _css_usuarios() -> None:
             font-weight: 600 !important;
             white-space: nowrap !important;
           }
-          /* Selectbox do papel: mesma altura dos botões, fonte menor. */
+          /* Selectbox do papel: compacto, mas SEM travar a altura.
+             Com `height: 30px` fixo o texto ("admin"/"leitor") batia na borda e
+             ficava cortado embaixo — o baseweb precisa do espaço do padding.
+             Agora só um piso (min-height) e a altura acompanha o conteúdo. */
           div[class*="st-key-papel_"] div[data-baseweb="select"] > div {
-            min-height: 30px !important; height: 30px !important;
+            min-height: 36px !important;
             font-size: 0.82rem !important;
           }
           /* CELULAR: as colunas do Streamlit NÃO quebram sozinhas — em tela
