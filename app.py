@@ -645,9 +645,9 @@ if col_ger is not None:
 # Botão "Usuários" verde (o de adicionar continua vermelho/primary).
 if EH_ADMIN:
     st.markdown(
-        "<style>.st-key-btn_gerenciar button{background:#21A038!important;"
+        "<style>.st-key-btn_gerenciar button{background:#4CC26A!important;"
         "border:0!important;color:#fff!important;font-weight:700!important;}"
-        ".st-key-btn_gerenciar button:hover{background:#1B8730!important;}</style>",
+        ".st-key-btn_gerenciar button:hover{background:#3EAF5A!important;}</style>",
         unsafe_allow_html=True,
     )
 
