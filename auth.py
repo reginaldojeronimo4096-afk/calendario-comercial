@@ -526,6 +526,14 @@ def _css_usuarios() -> None:
 
 @st.dialog("👥 Gerenciar Usuários", width="large")
 def dialog_gerenciar_usuarios() -> None:
+    """IMPORTANTE: todo `st.rerun()` DENTRO deste pop-up usa `scope="fragment"`.
+    O `st.rerun()` normal recarrega a página inteira e FECHA o pop-up — era por
+    isso que a confirmação de "Remover" e a senha temporária só apareciam depois
+    de reabrir a tela. O `@st.dialog` é um fragmento, então o escopo 'fragment'
+    redesenha só ele e o pop-up continua aberto.
+    (Histórico: já se suspeitou que o rerun de fragmento causava o erro
+    `removeChild` — NÃO causava; a culpa era da tradução automática do Chrome,
+    hoje desligada por `_desliga_traducao()` no app.py.)"""
     st.caption("Aprove cadastros, defina papéis, revogue acessos e resete senhas.")
     _css_usuarios()
 
@@ -616,24 +624,24 @@ def dialog_gerenciar_usuarios() -> None:
                 if b1.button("✅ Aprovar", key=f"ubtn_aprovar_{uid}",
                              width="stretch", help="Aprovar este cadastro"):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
-                    st.rerun()
+                    st.rerun(scope="fragment")
             elif status == "ativo":
                 if b1.button("💾 Papel", key=f"ubtn_papel_{uid}", width="stretch",
                              help="Salvar o papel escolhido ao lado"):
                     db.atualizar_usuario(uid, {"papel": papel_sel})
-                    st.rerun()
+                    st.rerun(scope="fragment")
             elif status == "revogado":
                 if b1.button("♻️ Reativar", key=f"ubtn_reativar_{uid}",
                              width="stretch", help="Devolver o acesso"):
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
-                    st.rerun()
+                    st.rerun(scope="fragment")
 
             # b2 — Revogar (não deixa revogar a própria conta, p/ não se trancar de fora)
             if status != "revogado" and not sou_eu:
                 if b2.button("🚫 Revogar", key=f"ubtn_revogar_{uid}", width="stretch",
                              help="Tirar o acesso (a conta continua na lista)"):
                     db.atualizar_usuario(uid, {"status": "revogado"})
-                    st.rerun()
+                    st.rerun(scope="fragment")
 
             # Enquanto confirma a remoção, b3/b4 viram "Sim/Não" (abaixo) —
             # o botão de senha sai de cena p/ não empilhar dois na mesma coluna.
@@ -646,7 +654,7 @@ def dialog_gerenciar_usuarios() -> None:
                 temp = _secrets.token_urlsafe(6)
                 db.atualizar_usuario(uid, {"senha_hash": _hash(temp)})
                 st.session_state["_senha_temp"] = (u.get("usuario", ""), temp)
-                st.rerun()
+                st.rerun(scope="fragment")
 
             # b4 — Remover DE VEZ (diferente de 'revogar': apaga a linha da lista).
             # Pede confirmação e nunca deixa apagar a própria conta (p/ o admin
@@ -660,11 +668,11 @@ def dialog_gerenciar_usuarios() -> None:
                                  width="stretch", type="primary"):
                         db.remover_usuario(uid)
                         st.session_state.pop(f"_conf_rm_{uid}", None)
-                        st.rerun()
+                        st.rerun(scope="fragment")
                     if b4.button("Não", key=f"ubtn_rmnao_{uid}", width="stretch"):
                         st.session_state.pop(f"_conf_rm_{uid}", None)
-                        st.rerun()
+                        st.rerun(scope="fragment")
                 elif b4.button("🗑️ Remover", key=f"ubtn_rm_{uid}", width="stretch",
                                help="Apagar a conta da lista (não dá para desfazer)"):
                     st.session_state[f"_conf_rm_{uid}"] = True
-                    st.rerun()
+                    st.rerun(scope="fragment")
