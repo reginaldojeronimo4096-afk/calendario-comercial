@@ -10,6 +10,8 @@ Grade de Ativação: lê o Excel (.xlsm) da grade e mostra as promoções.
 """
 import io
 import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import openpyxl
 import pandas as pd
@@ -93,6 +95,24 @@ def _periodo_acao(b1, c1) -> str:
 def _ciclo_curto(c: str) -> str:
     """Tira o 'CL' do ciclo p/ exibir mais limpo: 'CL_09_2026' -> '09_2026'."""
     return re.sub(r"^CL[_ ]?", "", (c or "").strip())
+
+
+_FUSO_BR = ZoneInfo("America/Sao_Paulo")
+
+
+def _fmt_atualizado(iso) -> str:
+    """Data de upload da grade (campo `atualizado_em`, guardado em UTC no banco)
+    -> 'dd/mm/aaaa' no fuso de Brasília. Retorna '' se vazio ou em formato
+    inesperado — nunca quebra a tela."""
+    if not iso:
+        return ""
+    try:
+        dt = datetime.fromisoformat(str(iso))
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(_FUSO_BR)
+        return dt.strftime("%d/%m/%Y")
+    except (ValueError, TypeError):
+        return ""
 
 
 def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
@@ -363,13 +383,24 @@ def _mostra_lista_promocoes(marca: str = "natura") -> None:
         )
     else:
         _hdr = "🗂️ Grade de Promoções"
-    # Cabeçalho: Ciclo à ESQUERDA + contagem de promoções à DIREITA, na MESMA faixa
-    # azul (flex space-between). No celular, quebra em 2 linhas (flex-wrap).
+    # Data do último upload desta grade (campo `atualizado_em`, gravado a cada
+    # "Atualizar Grade"). Como as listas do mesmo upload têm a mesma data, pega a
+    # MAIS RECENTE. Fica no MEIO da faixa; some sem quebrar nada se o banco não
+    # tiver a data (grades antigas ou coluna vazia).
+    _atuals = [L.get("atualizado_em") for L in listas if L.get("atualizado_em")]
+    _atualizado = _fmt_atualizado(max(_atuals)) if _atuals else ""
+    _meio = (
+        f"<span style='font-size:0.92rem;font-weight:600;color:#155FA0;opacity:.85;'>"
+        f"🕒 Última atualização {_atualizado}</span>" if _atualizado else ""
+    )
+    # Cabeçalho: Ciclo à ESQUERDA + (data no MEIO) + contagem à DIREITA, na MESMA
+    # faixa azul (flex space-between). No celular, quebra em linhas (flex-wrap).
     st.markdown(
         f"<div style='background:#EAF2FB;border:1px solid #1E88E5;border-radius:8px;"
         f"padding:0.55rem 0.95rem;margin:0.2rem 0 0.7rem;display:flex;"
         f"justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.4rem;'>"
         f"<span style='font-size:1.25rem;font-weight:800;color:#155FA0;'>{_hdr}</span>"
+        f"{_meio}"
         f"<span style='font-size:1.05rem;font-weight:700;color:#155FA0;'>"
         f"📋 {len(listas)} ações disponíveis</span></div>",
         unsafe_allow_html=True,
