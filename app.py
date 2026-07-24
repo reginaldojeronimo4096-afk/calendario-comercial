@@ -120,12 +120,37 @@ CORES_SUGERIDAS = {
 }
 
 # Paleta de cores da ação — mostrada como quadradinhos clicáveis.
+# 30 cores escolhidas para serem bem distintas entre si (sem pares quase iguais),
+# em 3 linhas de 10. Organizadas por família: quentes → frias → neutras. O nome de
+# cada cor aparece ao passar o mouse (dict COR_NOME abaixo). ATENÇÃO: mudar esta
+# lista NÃO afeta ações já salvas — cada ação guarda o próprio hex; a paleta é só o
+# menu de escolha. Trocar/reordenar aqui é seguro.
 PALETA_CORES = [
-    "#FF0000", "#990000", "#F4CCCC", "#FFC000", "#0000FF", "#000000",
-    "#7F7F7F", "#BFBFBF", "#CC33FF", "#38761D", "#6AA84F", "#E46C0A",
-    "#FFFFFF", "#93D050", "#A9D18E", "#E06666", "#FF4343", "#61CBF3",
-    "#83CCEB", "#741B47", "#00FFFF", "#F9CB9C",
+    # Linha 1 — vermelhos, rosas e roxos
+    "#E8463A", "#990000", "#FF6F61", "#E84393", "#F4CCCC",
+    "#CC33FF", "#9B30FF", "#7A5AA8", "#741B47", "#1A3E8C",
+    # Linha 2 — azuis, turquesas e verdes
+    "#0000FF", "#2E86DE", "#61CBF3", "#0E7490", "#00CFE8",
+    "#00BFA5", "#1E7B34", "#3FB950", "#A9D18E", "#C4D600",
+    # Linha 3 — amarelos, laranjas, marrom e neutros
+    "#F8E71C", "#FFC000", "#F5A623", "#E46C0A", "#8B5A2B",
+    "#F9CB9C", "#000000", "#4A4A4A", "#BFBFBF", "#FFFFFF",
 ]
+
+# Nome amigável de cada cor (aparece ao passar o mouse no quadradinho). Se faltar
+# algum hex aqui, o tooltip cai no próprio código da cor — sem quebrar nada.
+COR_NOME = {
+    "#E8463A": "Vermelho", "#990000": "Vinho", "#FF6F61": "Coral",
+    "#E84393": "Rosa", "#F4CCCC": "Rosa claro", "#CC33FF": "Magenta",
+    "#9B30FF": "Violeta", "#7A5AA8": "Roxo", "#741B47": "Roxo-vinho",
+    "#1A3E8C": "Azul-marinho", "#0000FF": "Azul forte", "#2E86DE": "Azul",
+    "#61CBF3": "Azul claro", "#0E7490": "Azul-petróleo", "#00CFE8": "Turquesa",
+    "#00BFA5": "Verde-água", "#1E7B34": "Verde escuro", "#3FB950": "Verde",
+    "#A9D18E": "Verde claro", "#C4D600": "Lima", "#F8E71C": "Amarelo",
+    "#FFC000": "Ouro", "#F5A623": "Âmbar", "#E46C0A": "Laranja",
+    "#8B5A2B": "Marrom", "#F9CB9C": "Pêssego", "#000000": "Preto",
+    "#4A4A4A": "Cinza escuro", "#BFBFBF": "Cinza claro", "#FFFFFF": "Branco",
+}
 
 
 def _contraste_texto(hex_cor: str) -> str:
@@ -767,13 +792,13 @@ def dialog_adicionar(ano, mes_num):
     # visual (tom à esquerda) vem da ORDEM DAS COLUNAS, não da ordem do código.
     col_tom, col_paleta = st.columns([1, 9], vertical_alignment="center")
     with col_paleta:
-        POR_LINHA = 11
+        POR_LINHA = 10   # 30 cores = 3 linhas de 10
         for ini in range(0, len(PALETA_CORES), POR_LINHA):
             cols = st.columns(POR_LINHA)
             for j, hexcor in enumerate(PALETA_CORES[ini:ini + POR_LINHA]):
                 i = ini + j
                 if cols[j].button(" ", key=f"cor_btn_{i}", width="stretch",
-                                  help=hexcor):
+                                  help=COR_NOME.get(hexcor, hexcor)):
                     st.session_state.cor_escolhida = hexcor
                     st.session_state.cor_tom = hexcor
     with col_tom:
