@@ -207,17 +207,19 @@ def tela_escolha_empresa() -> None:
         ".esc-sub{text-align:center;color:#7A7A85;font-size:1.05rem;margin:0 0 1.4rem;}"
         ".st-key-esc_card_natura,.st-key-esc_card_avon,"
         ".st-key-esc_gcard_natura,.st-key-esc_gcard_avon{background:#fff;"
-        "border:1px solid #ECECEC;border-radius:10px;padding:1.3rem 1.1rem 1.1rem;"
+        "border:1px solid #ECECEC;border-radius:10px;padding:.9rem 1.1rem .9rem;"
         "box-shadow:0 14px 34px rgba(0,0,0,.08);text-align:center;}"
         # Rótulo "Grade de Ativação <Marca>" dentro do cartão da grade (o calendário
         # não tem esse texto; a grade tem, conforme o layout pedido).
-        ".esc-gnome{font-weight:800;font-size:1.05rem;color:#1A1A2E;"
-        "text-align:center;margin:.15rem 0 .8rem;}"
+        ".esc-gnome{font-weight:800;font-size:1.02rem;color:#1A1A2E;"
+        "text-align:center;margin:.1rem 0 .55rem;}"
+        # Logo/padding menores p/ o cartão ficar mais BAIXO e retangular (antes 92px
+        # deixava tudo quadrado). O rótulo (esc-gnome) continua.
         ".esc-logo{display:flex;align-items:center;justify-content:center;"
-        "height:92px;margin-bottom:1rem;}"
-        ".esc-logo img{max-width:80%;max-height:80px;height:auto;}"
-        ".esc-logo-txt{height:92px;display:flex;align-items:center;"
-        "justify-content:center;font-size:1.6rem;font-weight:800;}"
+        "height:58px;margin-bottom:.45rem;}"
+        ".esc-logo img{max-width:78%;max-height:48px;height:auto;}"
+        ".esc-logo-txt{height:58px;display:flex;align-items:center;"
+        "justify-content:center;font-size:1.35rem;font-weight:800;}"
         # "Sair da conta": botão DISCRETO (fantasma) — os dois cartões coloridos
         # são a ação principal desta tela; este é a saída secundária, então tem
         # borda leve e texto cinza, ganhando cor (vermelho suave) só no hover.
