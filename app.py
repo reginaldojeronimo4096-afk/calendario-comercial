@@ -646,13 +646,13 @@ if _recarregar or st.session_state.get("_dados_marca") != EMPRESA:
 
 # ----------------------------------------------------------------------------
 # Botão "Atualizar dados" no TOPO da tela (mais visível que na barra lateral):
-# recarrega o calendário com a versão mais nova do banco SEM deslogar. Fica numa
-# coluna deslocada da esquerda p/ não colar no botão fixo "Painel Lateral" (que
-# aparece no canto quando a barra lateral está fechada). Só MARCA o pedido; o
-# recarregamento roda no bloco acima, na PRÓXIMA execução (onde carregar() existe).
+# recarrega o calendário com a versão mais nova do banco SEM deslogar. Alinhado à
+# ESQUERDA (mesma direção do botão "Painel Lateral", logo acima) e curto — a coluna
+# estreita (1.8) define o comprimento. Só MARCA o pedido; o recarregamento roda no
+# bloco acima, na PRÓXIMA execução (onde carregar() existe).
 # ----------------------------------------------------------------------------
-_ra = st.columns([1.3, 2.4, 6.3])
-with _ra[1]:
+_ra = st.columns([1.8, 8.2])
+with _ra[0]:
     if st.button("🔃 Atualizar dados", key="btn_atualizar", width="stretch",
                  help="Recarrega o calendário com a versão mais recente do servidor, "
                       "sem sair da conta. Use antes de editar para ver o que outras "
