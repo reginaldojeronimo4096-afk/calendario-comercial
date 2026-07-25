@@ -206,9 +206,17 @@ st.markdown(
         background: #E4F6F2 !important; border: 1px solid #14A08A !important;
       }
       .st-key-btn_atualizar button:hover { background: #CFEEE8 !important; }
-      /* Puxa o botão p/ a esquerda até ~encostar no "Painel Lateral" (que é fixo no
-         canto). Valor ajustável: mais negativo = mais p/ a esquerda. */
-      .st-key-btn_atualizar { margin-left: -3rem !important; }
+      /* Posiciona o "Atualizar dados" FIXO no topo, LOGO À DIREITA do "Painel
+         Lateral" (mesma faixa do cabeçalho). 'left' = onde começa (AJUSTÁVEL:
+         maior = mais p/ a direita). z-index abaixo da barra lateral p/ que, ao
+         ABRIR a barra, ela cubra este botão em vez de ele flutuar por cima. */
+      .st-key-btn_atualizar {
+        position: fixed !important; top: 0.5rem !important; left: 10.5rem !important;
+        z-index: 999900 !important; margin: 0 !important; width: auto !important;
+      }
+      .st-key-btn_atualizar button {
+        width: auto !important; padding: 6px 14px !important;
+      }
       /* Botão SAIR: vermelho suave (deixa claro que é a ação de sair). */
       .st-key-btn_sair button {
         font-weight: 700 !important; color: #C0392B !important;
@@ -648,20 +656,18 @@ if _recarregar or st.session_state.get("_dados_marca") != EMPRESA:
 
 
 # ----------------------------------------------------------------------------
-# Botão "Atualizar dados" no TOPO da tela (mais visível que na barra lateral):
-# recarrega o calendário com a versão mais nova do banco SEM deslogar. Alinhado à
-# ESQUERDA (mesma direção do botão "Painel Lateral", logo acima) e curto — a coluna
-# estreita (1.8) define o comprimento. Só MARCA o pedido; o recarregamento roda no
-# bloco acima, na PRÓXIMA execução (onde carregar() existe).
+# Botão "Atualizar dados": renderizado aqui no fluxo, mas o CSS
+# (.st-key-btn_atualizar) o joga FIXO no topo, LOGO À DIREITA do "Painel Lateral"
+# (mesma faixa/linha do cabeçalho). Recarrega o calendário com a versão mais nova
+# do banco SEM deslogar. Só MARCA o pedido; o recarregamento roda no bloco acima,
+# na PRÓXIMA execução (onde carregar() existe).
 # ----------------------------------------------------------------------------
-_ra = st.columns([1.5, 8.5])
-with _ra[0]:
-    if st.button("🔃 Atualizar dados", key="btn_atualizar", width="stretch",
-                 help="Recarrega o calendário com a versão mais recente do servidor, "
-                      "sem sair da conta. Use antes de editar para ver o que outras "
-                      "pessoas já salvaram."):
-        st.session_state["_recarregar_dados"] = True
-        st.rerun()
+if st.button("🔃 Atualizar dados", key="btn_atualizar",
+             help="Recarrega o calendário com a versão mais recente do servidor, "
+                  "sem sair da conta. Use antes de editar para ver o que outras "
+                  "pessoas já salvaram."):
+    st.session_state["_recarregar_dados"] = True
+    st.rerun()
 
 
 # ----------------------------------------------------------------------------
