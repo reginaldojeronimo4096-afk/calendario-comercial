@@ -219,7 +219,7 @@ def tela_escolha_empresa() -> None:
     with st.container(key="escolha_wrap"):
         st.markdown(
             "<div class='esc-titulo' style='margin:0 0 1.3rem;'>"
-            "📅 Calendário de Ações</div>",
+            "📅 Calendário de Ações Comerciais</div>",
             unsafe_allow_html=True,
         )
         c1, c2 = st.columns(2)
@@ -293,7 +293,7 @@ def tela_login(empresa=None) -> None:
             st.markdown(
                 "<div style='text-align:center;font-size:1.7rem;font-weight:800;"
                 "color:#1A1A2E;margin:0 0 .15rem;letter-spacing:.3px;'>"
-                "📅 Calendário de Ações</div>"
+                "📅 Calendário de Ações Comerciais</div>"
                 "<div style='text-align:center;font-size:1.2rem;font-weight:800;"
                 "margin:.05rem 0 .1rem;'>"
                 "<span style='color:#1A1A2E;'>Grade Comercial</span> "

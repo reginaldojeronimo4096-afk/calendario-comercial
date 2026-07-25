@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Calendário de Ações e Promoções — formato linha do tempo (timeline / Gantt).
+Calendário de Ações Comerciais e Promoções — formato linha do tempo (timeline / Gantt).
 Preencha os campos, e a ação é desenhada como um bloco colorido no período certo.
 Dados guardados no Supabase (banco online) — ver db.py. Login e papéis em auth.py.
 """
@@ -170,7 +170,7 @@ MESES_PT = [
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ]
 
-st.set_page_config(page_title="Calendário de Ações", page_icon="📅", layout="wide")
+st.set_page_config(page_title="Calendário de Ações Comerciais", page_icon="📅", layout="wide")
 
 # Esconde só o botão "Implantar" (mantém o menu ⋮ com tema claro/escuro) e
 # reduz o espaço em branco acima do cabeçalho, deixando o título mais no topo.
