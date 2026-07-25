@@ -180,12 +180,17 @@ def tela_escolha_empresa() -> None:
     o app leva ao login com a CARA daquela empresa. Uma conta só serve às duas —
     quem já está logado troca de empresa aqui SEM novo login (o app.py mantém o
     auth_user; só zera '_empresa' p/ cair nesta tela)."""
-    # CSS base + cor de cada empresa (borda do cartão e cor do botão).
+    # CSS base + cor de cada empresa (borda do cartão e cor do botão). Cada regra
+    # cobre TANTO o cartão do Calendário (esc_card_/esc_btn_) QUANTO o da Grade de
+    # Ativação (esc_gcard_/esc_gbtn_) da mesma marca — mesma cor nos dois.
     _btn_css = "".join(
-        f".st-key-esc_card_{k}{{border-top:5px solid {v['cor']} !important;}}"
-        f".st-key-esc_btn_{k} button{{background:{v['cor']} !important;border:0 !important;"
+        f".st-key-esc_card_{k},.st-key-esc_gcard_{k}"
+        f"{{border-top:5px solid {v['cor']} !important;}}"
+        f".st-key-esc_btn_{k} button,.st-key-esc_gbtn_{k} button"
+        f"{{background:{v['cor']} !important;border:0 !important;"
         f"color:#fff !important;font-weight:700 !important;border-radius:10px !important;}}"
-        f".st-key-esc_btn_{k} button:hover{{background:{v['cor_hover']} !important;}}"
+        f".st-key-esc_btn_{k} button:hover,.st-key-esc_gbtn_{k} button:hover"
+        f"{{background:{v['cor_hover']} !important;}}"
         for k, v in EMPRESAS.items()
     )
     st.markdown(
@@ -194,9 +199,14 @@ def tela_escolha_empresa() -> None:
         ".esc-titulo{text-align:center;font-size:1.6rem;font-weight:800;"
         "color:#1A1A2E;margin:0 0 .1rem;}"
         ".esc-sub{text-align:center;color:#7A7A85;font-size:1.05rem;margin:0 0 1.4rem;}"
-        ".st-key-esc_card_natura,.st-key-esc_card_avon{background:#fff;"
+        ".st-key-esc_card_natura,.st-key-esc_card_avon,"
+        ".st-key-esc_gcard_natura,.st-key-esc_gcard_avon{background:#fff;"
         "border:1px solid #ECECEC;border-radius:16px;padding:1.3rem 1.1rem 1.1rem;"
         "box-shadow:0 14px 34px rgba(0,0,0,.08);text-align:center;}"
+        # Rótulo "Grade de Ativação <Marca>" dentro do cartão da grade (o calendário
+        # não tem esse texto; a grade tem, conforme o layout pedido).
+        ".esc-gnome{font-weight:800;font-size:1.05rem;color:#1A1A2E;"
+        "margin:.15rem 0 .8rem;}"
         ".esc-logo{display:flex;align-items:center;justify-content:center;"
         "height:92px;margin-bottom:1rem;}"
         ".esc-logo img{max-width:80%;max-height:80px;height:auto;}"
@@ -243,6 +253,45 @@ def tela_escolha_empresa() -> None:
                                  key=f"esc_btn_{chave}", width="stretch"):
                         st.session_state["_empresa"] = chave
                         st.rerun()
+
+        # --- Grade de Ativação Comercial (por enquanto SÓ VISUAL, p/ apresentação) ---
+        # Os botões AINDA não abrem a Grade: mostram um aviso "em breve". A página de
+        # Promoções/Grade já existe (botão na barra lateral, depois de entrar); ligar
+        # a entrada por AQUI fica para o futuro. Mantido idêntico ao bloco do
+        # calendário (mesmos estilos esc_gcard_/esc_gbtn_ por marca).
+        st.markdown("<div style='height:1.7rem'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='esc-titulo' style='font-size:1.35rem;margin:0 0 1.1rem;'>"
+            "🗂️ Grade de Ativação Comercial</div>",
+            unsafe_allow_html=True,
+        )
+        g1, g2 = st.columns(2)
+        for col, chave in ((g1, "natura"), (g2, "avon")):
+            cfg = EMPRESAS[chave]
+            with col:
+                with st.container(key=f"esc_gcard_{chave}"):
+                    _logo = _logo_uri(cfg["logo"])
+                    if _logo:
+                        st.markdown(
+                            f"<div class='esc-logo'><img src='{_logo}' "
+                            f"alt='{cfg['nome']}'></div>",
+                            unsafe_allow_html=True,
+                        )
+                    else:  # se faltar o arquivo, cai no emoji + nome
+                        st.markdown(
+                            f"<div class='esc-logo-txt'>{cfg['emoji']} {cfg['nome']}</div>",
+                            unsafe_allow_html=True,
+                        )
+                    st.markdown(
+                        f"<div class='esc-gnome'>Grade de Ativação {cfg['nome']}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button(f"Abrir Grade de Ativação {cfg['nome']}",
+                                 key=f"esc_gbtn_{chave}", width="stretch"):
+                        st.toast(
+                            f"🚧 Grade de Ativação {cfg['nome']} — em breve!",
+                            icon="🗂️",
+                        )
 
         # Sair (caso queira trocar de conta a partir daqui). O rótulo diz
         # "Sair da conta" — e NÃO "← Login" — porque a ação é DESLOGAR: quem
