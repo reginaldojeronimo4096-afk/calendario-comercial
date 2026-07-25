@@ -199,6 +199,13 @@ st.markdown(
       }
       .st-key-btn_promocoes button:hover, .st-key-voltar_calendario button:hover,
       .st-key-voltar_prom button:hover { background: #D6E8FA !important; }
+      /* Botão ATUALIZAR DADOS (topo): teal/verde-azulado — distinto do azul de
+         navegação e do laranja/rosa das marcas; lê como "sincronizar/atualizar". */
+      .st-key-btn_atualizar button {
+        font-weight: 700 !important; color: #0A7D6B !important;
+        background: #E4F6F2 !important; border: 1px solid #14A08A !important;
+      }
+      .st-key-btn_atualizar button:hover { background: #CFEEE8 !important; }
       /* Botão SAIR: vermelho suave (deixa claro que é a ação de sair). */
       .st-key-btn_sair button {
         font-weight: 700 !important; color: #C0392B !important;
@@ -414,17 +421,6 @@ with st.sidebar:
     if st.button("📑 Promoções", key="btn_promocoes", width="stretch"):
         st.session_state["_view"] = "promocoes"
         st.session_state.pop("_grade_sel", None)
-        st.rerun()
-    # Atualizar dados: recarrega o calendário com a versão MAIS RECENTE do banco,
-    # SEM deslogar (ao contrário do F5, que cai no login). Útil antes de editar, p/
-    # ver o que outros já salvaram. Só MARCA o pedido aqui; o recarregamento em si
-    # roda no bloco "Estado da sessão" (onde carregar() já existe). Atenção: descarta
-    # edições locais ainda não salvas — pega a versão do servidor.
-    if st.button("🔃 Atualizar dados", key="btn_atualizar", width="stretch",
-                 help="Recarrega o calendário com a versão mais recente do servidor, "
-                      "sem sair da conta. Use antes de editar para ver o que outras "
-                      "pessoas já salvaram."):
-        st.session_state["_recarregar_dados"] = True
         st.rerun()
     # Trocar empresa: volta à tela de escolha SEM deslogar (conta única serve às duas).
     if st.button("🔄 Trocar empresa", key="btn_trocar_empresa", width="stretch"):
@@ -646,6 +642,23 @@ if _recarregar or st.session_state.get("_dados_marca") != EMPRESA:
     st.session_state["_dados_marca"] = EMPRESA
     if _recarregar:
         st.toast("✅ Dados atualizados com a versão mais recente!", icon="🔃")
+
+
+# ----------------------------------------------------------------------------
+# Botão "Atualizar dados" no TOPO da tela (mais visível que na barra lateral):
+# recarrega o calendário com a versão mais nova do banco SEM deslogar. Fica numa
+# coluna deslocada da esquerda p/ não colar no botão fixo "Painel Lateral" (que
+# aparece no canto quando a barra lateral está fechada). Só MARCA o pedido; o
+# recarregamento roda no bloco acima, na PRÓXIMA execução (onde carregar() existe).
+# ----------------------------------------------------------------------------
+_ra = st.columns([1.3, 2.4, 6.3])
+with _ra[1]:
+    if st.button("🔃 Atualizar dados", key="btn_atualizar", width="stretch",
+                 help="Recarrega o calendário com a versão mais recente do servidor, "
+                      "sem sair da conta. Use antes de editar para ver o que outras "
+                      "pessoas já salvaram."):
+        st.session_state["_recarregar_dados"] = True
+        st.rerun()
 
 
 # ----------------------------------------------------------------------------
