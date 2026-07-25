@@ -426,16 +426,27 @@ def _mostra_lista_promocoes(marca: str = "natura") -> None:
             continue
         c1, c2, c3 = st.columns([3, 2, 1.4])   # nome mais estreito: menos espaço vazio
         with c1:
-            # Nome + período/LP num ÚNICO bloco, com line-height apertado, p/ a linha
-            # ficar mais BAIXA (compacta). Nome completo calculado do lista_nome (já
-            # vale p/ as listas atuais, sem re-subir a grade). Período = B1/C1; LP = B2.
-            _sub = f"🗓️ {L.get('periodo_acao') or 'período —'}" + (
-                f"  ·  🔗 LP: {L.get('link_lp')}" if L.get("link_lp") else ""
+            # Nome + período/LP num ÚNICO bloco, com line-height apertado. O período e o
+            # LP viram ETIQUETAS (chips) — antes era cinza claro #8a8a8a 0.85rem, de baixo
+            # contraste. Período em azul suave (info principal) e LP em cinza neutro; texto
+            # mais escuro e um tico maior p/ legibilidade. Período = B1/C1; LP = B2.
+            _chip = (
+                "display:inline-block;padding:2px 9px;border-radius:6px;"
+                "font-size:0.82rem;font-weight:600;line-height:1.4;"
             )
+            _sub = (
+                f"<span style='{_chip}background:#EAF2FB;color:#155FA0;'>"
+                f"🗓️ {L.get('periodo_acao') or 'período —'}</span>"
+            )
+            if L.get("link_lp"):
+                _sub += (
+                    f" <span style='{_chip}background:#F0F2F6;color:#3C4350;'>"
+                    f"🔗 LP: {L.get('link_lp')}</span>"
+                )
             st.markdown(
-                f"<div style='line-height:1.3;'>"
+                f"<div style='line-height:1.9;'>"
                 f"<span style='font-weight:700;'>{_tipo_amigavel(L['lista_nome'])}</span><br>"
-                f"<span style='color:#8a8a8a;font-size:0.85rem;'>{_sub}</span></div>",
+                f"{_sub}</div>",
                 unsafe_allow_html=True,
             )
         c2.markdown(f"**{L.get('total_skus', 0)}** SKUs")
