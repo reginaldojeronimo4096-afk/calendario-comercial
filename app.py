@@ -32,7 +32,9 @@ import grade
 # ----------------------------------------------------------------------------
 ARQUIVO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "acoes.csv")
 
-COLUNAS = ["Ação", "Categoria", "Início", "Fim", "Cor", "Detalhes"]
+# "Alterado por" = auditoria (quem mexeu por último em CADA ação). É a última
+# coluna, preenchida ao salvar. Fica só para leitura na tabela (o usuário não digita).
+COLUNAS = ["Ação", "Categoria", "Início", "Fim", "Cor", "Detalhes", "Alterado por"]
 
 # Portfólio do Ciclo: faixa amarela no topo (acima das semanas) com o texto
 # digitado (ex.: "C09 e C10"), cobrindo o período escolhido. Salvo à parte.
@@ -375,6 +377,8 @@ _U = auth.usuario_atual()
 PAPEL = _U["papel"]
 PODE_EDITAR = PAPEL in ("admin", "editor")   # admin/editor mexem no calendário
 EH_ADMIN = PAPEL == "admin"                  # só admin gerencia usuários
+# Nome carimbado na coluna "Alterado por" quando esta pessoa cria/edita uma ação.
+_AUTOR = (_U.get("nome") or _U.get("usuario") or "").strip()
 
 # Barra lateral: cartão de quem está logado + navegação + sair.
 # Ordem pensada por FREQUÊNCIA de uso: primeiro o que se usa direto (Promoções),
@@ -507,6 +511,7 @@ _traduz_calendario()
 _MAPA_ACOES = {
     "acao": "Ação", "categoria": "Categoria", "inicio": "Início",
     "fim": "Fim", "cor": "Cor", "detalhes": "Detalhes",
+    "alterado_por": "Alterado por",
 }
 _MAPA_CICLOS = {"ciclo": "Ciclo", "inicio": "Início", "fim": "Fim"}
 
@@ -538,6 +543,22 @@ def _para_texto(v):
     return str(v)
 
 
+def _norm_cmp(v):
+    """Normaliza uma célula p/ COMPARAR duas versões da linha (detectar se mudou).
+    Datas viram 'AAAA-MM-DD'; vazio/None viram ''; o resto vira texto sem espaços."""
+    try:
+        if v is None or pd.isna(v):
+            return ""
+    except (TypeError, ValueError):
+        pass
+    if hasattr(v, "isoformat"):
+        try:
+            return v.isoformat()[:10]
+        except (AttributeError, TypeError, ValueError):
+            return str(v).strip()
+    return str(v).strip()
+
+
 def carregar() -> pd.DataFrame:
     linhas = db.listar_acoes(EMPRESA)   # EMPRESA (global) = Natura ou Avon
     if not linhas:
@@ -564,6 +585,7 @@ def salvar(df: pd.DataFrame) -> None:
             "fim": _data_iso(rec.get("Fim")),
             "cor": _para_texto(rec.get("Cor")),
             "detalhes": _para_texto(rec.get("Detalhes")),
+            "alterado_por": _para_texto(rec.get("Alterado por")),
         }
         for rec in df.to_dict(orient="records")
     ]
@@ -869,6 +891,7 @@ def dialog_adicionar(ano, mes_num):
                     "Fim": data_fim,
                     "Cor": st.session_state.get("cor_tom", PALETA_CORES[0]),
                     "Detalhes": detalhes.strip(),
+                    "Alterado por": _AUTOR,   # quem criou a ação
                 }
                 st.session_state.df = pd.concat(
                     [st.session_state.df, pd.DataFrame([nova])], ignore_index=True
@@ -928,6 +951,7 @@ def dialog_editar_descricao(orig_idx):
             st.error("O texto não pode ficar vazio. 🙂")
         else:
             st.session_state.df.at[orig_idx, "Ação"] = _txt
+            st.session_state.df.at[orig_idx, "Alterado por"] = _AUTOR
             salvar(st.session_state.df)
             st.session_state.flash = "Ação atualizada!"
             st.rerun()
@@ -1658,7 +1682,7 @@ with st.expander(_titulo_painel, expanded=False):
     # valor preenchido (ex.: "Detalhes" vazio em todas as linhas), o pandas infere
     # o tipo como float e o st.data_editor gera StreamlitAPIException ao casar com
     # a TextColumn. Preenche NaN com "" e força str para manter a compatibilidade.
-    for _col in ("Ação", "Categoria", "Cor", "Detalhes"):
+    for _col in ("Ação", "Categoria", "Cor", "Detalhes", "Alterado por"):
         if _col in editor_df.columns:
             editor_df[_col] = editor_df[_col].fillna("").astype(str)
 
@@ -1676,9 +1700,11 @@ with st.expander(_titulo_painel, expanded=False):
     # (ferramentas de edição). LEITOR vê uma visão LIMPA de só leitura, SEM a coluna
     # "Excluir" (não passa a ideia de que pode apagar) e SEM o hex — só a corzinha.
     if PODE_EDITAR:
-        _ordem_cols = ["Excluir", "Ação", "Categoria", "Início", "Fim", "🎨", "Cor", "Detalhes"]
+        _ordem_cols = ["Excluir", "Ação", "Categoria", "Início", "Fim", "🎨", "Cor",
+                       "Detalhes", "Alterado por"]
     else:
-        _ordem_cols = ["Ação", "Categoria", "Início", "Fim", "🎨", "Detalhes"]
+        _ordem_cols = ["Ação", "Categoria", "Início", "Fim", "🎨", "Detalhes",
+                       "Alterado por"]
 
     editado = st.data_editor(
         editor_df,
@@ -1703,6 +1729,10 @@ with st.expander(_titulo_painel, expanded=False):
             "🎨": st.column_config.ImageColumn("Cor", help="Prévia da cor do hex ao lado"),
             "Cor": st.column_config.TextColumn("Cor (hex)", help="Ex: #E8463A"),
             "Detalhes": st.column_config.TextColumn("Detalhes", width="large"),
+            "Alterado por": st.column_config.TextColumn(
+                "✏️ Alterado por", disabled=True,
+                help="Quem alterou esta ação por último (preenchido ao salvar).",
+            ),
         },
         key="editor",
     )
@@ -1710,9 +1740,20 @@ with st.expander(_titulo_painel, expanded=False):
     col_a, col_b, col_c, col_d = st.columns([1, 1, 1, 1.5])
     with col_a:
         if PODE_EDITAR and st.button("💾 Salvar alterações", type="primary"):
-            # Remove as linhas marcadas em "Excluir", descarta as colunas auxiliares
-            # (🎨 e Excluir) e junta com as ações dos outros meses preservadas.
+            # Remove as colunas auxiliares (🎨) e, ANTES de aplicar o "Excluir",
+            # carimba "Alterado por" SÓ nas linhas que realmente mudaram (comparando
+            # com editor_df, a versão de antes da edição — mesmo índice). As linhas
+            # intocadas mantêm quem já constava; as alteradas recebem o autor atual.
             salvas = editado.drop(columns=["🎨"], errors="ignore")
+            _CONTENT = ["Ação", "Categoria", "Início", "Fim", "Cor", "Detalhes"]
+            for _idx in salvas.index:
+                inalterada = _idx in editor_df.index and all(
+                    _norm_cmp(salvas.at[_idx, _c]) == _norm_cmp(editor_df.at[_idx, _c])
+                    for _c in _CONTENT
+                )
+                if not inalterada:
+                    salvas.at[_idx, "Alterado por"] = _AUTOR
+            # Remove as linhas marcadas em "Excluir" e junta com os outros meses.
             if "Excluir" in salvas.columns:
                 manter = ~salvas["Excluir"].fillna(False).astype(bool)
                 salvas = salvas[manter].drop(columns=["Excluir"])
@@ -1729,7 +1770,8 @@ with st.expander(_titulo_painel, expanded=False):
         else:
             # CSV (Google Sheets / qualquer planilha) — mesmas colunas do Excel, sem
             # "Cor". Datas em DD/MM/AAAA e BOM (utf-8-sig) p/ os acentos abrirem certo.
-            df_csv = st.session_state.df.drop(columns=["Cor"], errors="ignore").copy()
+            df_csv = st.session_state.df.drop(
+                columns=["Cor", "Alterado por"], errors="ignore").copy()
             for _dcol in ("Início", "Fim"):
                 if _dcol in df_csv.columns:
                     df_csv[_dcol] = pd.to_datetime(
@@ -1748,7 +1790,8 @@ with st.expander(_titulo_painel, expanded=False):
         # Gera o arquivo Excel (.xlsx) em memória, já formatado, para download.
         buffer = io.BytesIO()
         # "Cor" (hex) não é relevante no relatório — fica de fora do Excel.
-        df_export = st.session_state.df.drop(columns=["Cor"], errors="ignore").copy()
+        df_export = st.session_state.df.drop(
+            columns=["Cor", "Alterado por"], errors="ignore").copy()
         # Datas como datetime (para o Excel reconhecer e formatar dd/mm/aaaa).
         for _dcol in ("Início", "Fim"):
             if _dcol in df_export.columns:
