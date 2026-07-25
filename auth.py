@@ -195,9 +195,15 @@ def tela_escolha_empresa() -> None:
     )
     st.markdown(
         "<style>"
-        ".st-key-escolha_wrap{max-width:640px;margin:5vh auto 0;}"
-        ".esc-titulo{text-align:center;font-size:1.6rem;font-weight:800;"
+        # Mais largo agora que as DUAS seções ficam lado a lado (4 cartões numa linha).
+        ".st-key-escolha_wrap{max-width:1080px;margin:5vh auto 0;}"
+        ".esc-titulo{text-align:center;font-size:1.4rem;font-weight:800;"
         "color:#1A1A2E;margin:0 0 .1rem;}"
+        # Cabeçalhos das duas seções (Calendário | Grade): MESMO tamanho (herdam
+        # .esc-titulo) e centralizados; flex + min-height p/ alinharem mesmo que um
+        # deles quebre em 2 linhas.
+        ".esc-hdr{min-height:2.2em;display:flex;align-items:center;"
+        "justify-content:center;text-wrap:balance;margin:0 0 1rem;}"
         ".esc-sub{text-align:center;color:#7A7A85;font-size:1.05rem;margin:0 0 1.4rem;}"
         ".st-key-esc_card_natura,.st-key-esc_card_avon,"
         ".st-key-esc_gcard_natura,.st-key-esc_gcard_avon{background:#fff;"
@@ -206,7 +212,7 @@ def tela_escolha_empresa() -> None:
         # Rótulo "Grade de Ativação <Marca>" dentro do cartão da grade (o calendário
         # não tem esse texto; a grade tem, conforme o layout pedido).
         ".esc-gnome{font-weight:800;font-size:1.05rem;color:#1A1A2E;"
-        "margin:.15rem 0 .8rem;}"
+        "text-align:center;margin:.15rem 0 .8rem;}"
         ".esc-logo{display:flex;align-items:center;justify-content:center;"
         "height:92px;margin-bottom:1rem;}"
         ".esc-logo img{max-width:80%;max-height:80px;height:auto;}"
@@ -227,13 +233,24 @@ def tela_escolha_empresa() -> None:
         unsafe_allow_html=True,
     )
     with st.container(key="escolha_wrap"):
-        st.markdown(
-            "<div class='esc-titulo' style='margin:0 0 1.3rem;'>"
-            "📅 Calendário de Ações Comerciais</div>",
+        # Duas seções LADO A LADO (Calendário | Grade de Ativação), com um vão no
+        # meio. Como o Streamlit só aninha colunas 1 nível, NÃO dá p/ fazer
+        # [seção|seção] e dentro [card|card]. Solução: UMA linha de cabeçalhos
+        # [2 | vão | 2] + UMA linha de cards [1|1 | vão | 1|1] — as larguras batem
+        # (2 = 1+1) e o mesmo vão 0.3 nas duas, então as colunas alinham.
+        _hc1, _hgap, _hc2 = st.columns([2, 0.3, 2], gap="small")
+        _hc1.markdown(
+            "<div class='esc-titulo esc-hdr'>📅 Calendário de Ações Comerciais</div>",
             unsafe_allow_html=True,
         )
-        c1, c2 = st.columns(2)
-        for col, chave in ((c1, "natura"), (c2, "avon")):
+        _hc2.markdown(
+            "<div class='esc-titulo esc-hdr'>🗂️ Grade de Ativação Comercial</div>",
+            unsafe_allow_html=True,
+        )
+        _cn, _ca, _cgap, _gn, _ga = st.columns([1, 1, 0.3, 1, 1], gap="small")
+
+        # Cartões do CALENDÁRIO (abrem a empresa escolhida).
+        for col, chave in ((_cn, "natura"), (_ca, "avon")):
             cfg = EMPRESAS[chave]
             with col:
                 with st.container(key=f"esc_card_{chave}"):
@@ -254,19 +271,11 @@ def tela_escolha_empresa() -> None:
                         st.session_state["_empresa"] = chave
                         st.rerun()
 
-        # --- Grade de Ativação Comercial (por enquanto SÓ VISUAL, p/ apresentação) ---
-        # Os botões AINDA não abrem a Grade: mostram um aviso "em breve". A página de
-        # Promoções/Grade já existe (botão na barra lateral, depois de entrar); ligar
-        # a entrada por AQUI fica para o futuro. Mantido idêntico ao bloco do
-        # calendário (mesmos estilos esc_gcard_/esc_gbtn_ por marca).
-        st.markdown("<div style='height:1.7rem'></div>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='esc-titulo' style='font-size:1.35rem;margin:0 0 1.1rem;'>"
-            "🗂️ Grade de Ativação Comercial</div>",
-            unsafe_allow_html=True,
-        )
-        g1, g2 = st.columns(2)
-        for col, chave in ((g1, "natura"), (g2, "avon")):
+        # Cartões da GRADE DE ATIVAÇÃO (por enquanto SÓ VISUAL, p/ apresentação):
+        # os botões AINDA não abrem a Grade — mostram um aviso "em breve". A página
+        # de Promoções/Grade já existe (botão na barra lateral, depois de entrar);
+        # ligar a entrada por AQUI fica para o futuro.
+        for col, chave in ((_gn, "natura"), (_ga, "avon")):
             cfg = EMPRESAS[chave]
             with col:
                 with st.container(key=f"esc_gcard_{chave}"):
