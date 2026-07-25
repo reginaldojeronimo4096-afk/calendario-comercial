@@ -217,6 +217,13 @@ st.markdown(
       .st-key-btn_atualizar button {
         width: auto !important; padding: 6px 14px !important;
       }
+      /* Quando a BARRA LATERAL está ABERTA, empurra o botão p/ a DIREITA dela, p/
+         não ficar coberto. ~23rem = logo após a largura padrão da barra (~21rem).
+         A transição deixa o deslocamento suave. Ajustável (maior = mais à direita). */
+      .st-key-btn_atualizar { transition: left .2s ease !important; }
+      [data-testid="stSidebar"][aria-expanded="true"] ~ * .st-key-btn_atualizar {
+        left: 23rem !important;
+      }
       /* Botão SAIR: vermelho suave (deixa claro que é a ação de sair). */
       .st-key-btn_sair button {
         font-weight: 700 !important; color: #C0392B !important;
