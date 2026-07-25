@@ -206,6 +206,9 @@ st.markdown(
         background: #E4F6F2 !important; border: 1px solid #14A08A !important;
       }
       .st-key-btn_atualizar button:hover { background: #CFEEE8 !important; }
+      /* Puxa o botão p/ a esquerda até ~encostar no "Painel Lateral" (que é fixo no
+         canto). Valor ajustável: mais negativo = mais p/ a esquerda. */
+      .st-key-btn_atualizar { margin-left: -3rem !important; }
       /* Botão SAIR: vermelho suave (deixa claro que é a ação de sair). */
       .st-key-btn_sair button {
         font-weight: 700 !important; color: #C0392B !important;
@@ -651,7 +654,7 @@ if _recarregar or st.session_state.get("_dados_marca") != EMPRESA:
 # estreita (1.8) define o comprimento. Só MARCA o pedido; o recarregamento roda no
 # bloco acima, na PRÓXIMA execução (onde carregar() existe).
 # ----------------------------------------------------------------------------
-_ra = st.columns([1.8, 8.2])
+_ra = st.columns([1.5, 8.5])
 with _ra[0]:
     if st.button("🔃 Atualizar dados", key="btn_atualizar", width="stretch",
                  help="Recarrega o calendário com a versão mais recente do servidor, "
