@@ -207,7 +207,7 @@ def tela_escolha_empresa() -> None:
         ".esc-sub{text-align:center;color:#7A7A85;font-size:1.05rem;margin:0 0 1.4rem;}"
         ".st-key-esc_card_natura,.st-key-esc_card_avon,"
         ".st-key-esc_gcard_natura,.st-key-esc_gcard_avon{background:#fff;"
-        "border:1px solid #ECECEC;border-radius:16px;padding:1.3rem 1.1rem 1.1rem;"
+        "border:1px solid #ECECEC;border-radius:10px;padding:1.3rem 1.1rem 1.1rem;"
         "box-shadow:0 14px 34px rgba(0,0,0,.08);text-align:center;}"
         # Rótulo "Grade de Ativação <Marca>" dentro do cartão da grade (o calendário
         # não tem esse texto; a grade tem, conforme o layout pedido).
@@ -266,11 +266,10 @@ def tela_escolha_empresa() -> None:
                             f"<div class='esc-logo-txt'>{cfg['emoji']} {cfg['nome']}</div>",
                             unsafe_allow_html=True,
                         )
-                    # Espaço reservado INVISÍVEL do mesmo tamanho do nome que os
-                    # cartões da Grade têm — assim os 4 cartões ficam com a MESMA
-                    # altura (o do calendário não mostra nome; a tela já diz a marca).
+                    # Descritivo do cartão (mesmo lugar/estilo do nome nos cartões da
+                    # Grade) — preenche o vão e mantém os 4 cartões com a MESMA altura.
                     st.markdown(
-                        "<div class='esc-gnome' style='visibility:hidden'>—</div>",
+                        "<div class='esc-gnome'>Calendário de Ações</div>",
                         unsafe_allow_html=True,
                     )
                     if st.button("Abrir calendário",
