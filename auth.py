@@ -266,7 +266,14 @@ def tela_escolha_empresa() -> None:
                             f"<div class='esc-logo-txt'>{cfg['emoji']} {cfg['nome']}</div>",
                             unsafe_allow_html=True,
                         )
-                    if st.button(f"Abrir calendário da {cfg['nome']}",
+                    # Espaço reservado INVISÍVEL do mesmo tamanho do nome que os
+                    # cartões da Grade têm — assim os 4 cartões ficam com a MESMA
+                    # altura (o do calendário não mostra nome; a tela já diz a marca).
+                    st.markdown(
+                        "<div class='esc-gnome' style='visibility:hidden'>—</div>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("Abrir calendário",
                                  key=f"esc_btn_{chave}", width="stretch"):
                         st.session_state["_empresa"] = chave
                         st.rerun()
@@ -295,7 +302,7 @@ def tela_escolha_empresa() -> None:
                         f"<div class='esc-gnome'>Grade de Ativação {cfg['nome']}</div>",
                         unsafe_allow_html=True,
                     )
-                    if st.button(f"Abrir Grade de Ativação {cfg['nome']}",
+                    if st.button("Abrir Grade de Ativação",
                                  key=f"esc_gbtn_{chave}", width="stretch"):
                         st.toast(
                             f"🚧 Grade de Ativação {cfg['nome']} — em breve!",
