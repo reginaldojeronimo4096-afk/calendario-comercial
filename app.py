@@ -208,11 +208,13 @@ st.markdown(
       .st-key-btn_atualizar button:hover { background: #CFEEE8 !important; }
       /* Posiciona o "Atualizar dados" FIXO no topo, LOGO À DIREITA do "Painel
          Lateral" (mesma faixa do cabeçalho). 'left' = onde começa (AJUSTÁVEL:
-         maior = mais p/ a direita). z-index abaixo da barra lateral p/ que, ao
-         ABRIR a barra, ela cubra este botão em vez de ele flutuar por cima. */
+         maior = mais p/ a direita). z-index ALTO (igual ao "Painel Lateral") p/
+         ficar ACIMA do cabeçalho do Streamlit — senão o cabeçalho transparente
+         cobre o botão e ele fica visível mas NÃO clicável. A barra lateral aberta
+         não o cobre mais porque ele desliza p/ a direita (regra abaixo). */
       .st-key-btn_atualizar {
         position: fixed !important; top: 0.5rem !important; left: 10.5rem !important;
-        z-index: 999900 !important; margin: 0 !important; width: auto !important;
+        z-index: 1000000 !important; margin: 0 !important; width: auto !important;
       }
       .st-key-btn_atualizar button {
         width: auto !important; padding: 6px 14px !important;
