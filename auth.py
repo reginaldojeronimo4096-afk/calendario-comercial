@@ -298,7 +298,7 @@ def tela_escolha_empresa() -> None:
                             unsafe_allow_html=True,
                         )
                     st.markdown(
-                        f"<div class='esc-gnome'>Grade de Ativação {cfg['nome']}</div>",
+                        "<div class='esc-gnome'>Grade de Ativação</div>",
                         unsafe_allow_html=True,
                     )
                     if st.button("Abrir Grade de Ativação",
