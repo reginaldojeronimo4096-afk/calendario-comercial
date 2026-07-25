@@ -415,6 +415,17 @@ with st.sidebar:
         st.session_state["_view"] = "promocoes"
         st.session_state.pop("_grade_sel", None)
         st.rerun()
+    # Atualizar dados: recarrega o calendário com a versão MAIS RECENTE do banco,
+    # SEM deslogar (ao contrário do F5, que cai no login). Útil antes de editar, p/
+    # ver o que outros já salvaram. Só MARCA o pedido aqui; o recarregamento em si
+    # roda no bloco "Estado da sessão" (onde carregar() já existe). Atenção: descarta
+    # edições locais ainda não salvas — pega a versão do servidor.
+    if st.button("🔃 Atualizar dados", key="btn_atualizar", width="stretch",
+                 help="Recarrega o calendário com a versão mais recente do servidor, "
+                      "sem sair da conta. Use antes de editar para ver o que outras "
+                      "pessoas já salvaram."):
+        st.session_state["_recarregar_dados"] = True
+        st.rerun()
     # Trocar empresa: volta à tela de escolha SEM deslogar (conta única serve às duas).
     if st.button("🔄 Trocar empresa", key="btn_trocar_empresa", width="stretch"):
         st.session_state.pop("_empresa", None)
@@ -625,10 +636,16 @@ def salvar_ciclos(df: pd.DataFrame) -> None:
 # trocar Natura <-> Avon, o calendário passa a mostrar os dados da empresa certa
 # (o que estava em memória era da empresa anterior). '_dados_marca' guarda de qual
 # empresa é o df que está carregado agora.
-if st.session_state.get("_dados_marca") != EMPRESA:
+# Recarrega se: (a) trocou de empresa / 1º carregamento, OU (b) a pessoa clicou
+# em "🔃 Atualizar dados" na barra lateral (flag consumida aqui, onde carregar()
+# já está definida — no clique, lá em cima, ela ainda não existe).
+_recarregar = st.session_state.pop("_recarregar_dados", False)
+if _recarregar or st.session_state.get("_dados_marca") != EMPRESA:
     st.session_state.df = carregar()
     st.session_state.ciclos_df = carregar_ciclos()
     st.session_state["_dados_marca"] = EMPRESA
+    if _recarregar:
+        st.toast("✅ Dados atualizados com a versão mais recente!", icon="🔃")
 
 
 # ----------------------------------------------------------------------------
