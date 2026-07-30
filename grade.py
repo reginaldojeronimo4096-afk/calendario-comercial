@@ -2,7 +2,7 @@
 """
 Grade de Ativação: lê o Excel (.xlsm) da grade e mostra as promoções.
 
-- Só considera as abas cujo nome começa com 'LISTA_' e que estão VISÍVEIS
+- Só considera as abas cujo nome começa com 'LISTA' (LISTA_, LISTA-, LISTA 01 ...) e que estão VISÍVEIS
   (abas ocultas são ignoradas de propósito).
 - De cada aba pega os dados da promoção (período, link, %) e os produtos.
 - Ao subir uma grade nova, SUBSTITUI as listas que vierem no arquivo; as que não
@@ -116,12 +116,13 @@ def _fmt_atualizado(iso) -> str:
 
 
 def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
-    """Lê o arquivo e devolve [(meta, produtos), ...] das abas LISTA_ visíveis."""
+    """Lê o arquivo e devolve [(meta, produtos), ...] das abas que começam com
+    'LISTA' (LISTA_, LISTA-, LISTA 01 ...) e estão visíveis."""
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes), read_only=True, data_only=True)
     ciclo, periodo = _ciclo_periodo(nome_arquivo)
     resultado = []
     for nome in wb.sheetnames:
-        if not nome.startswith("LISTA_"):
+        if not nome.upper().startswith("LISTA"):   # pega LISTA_ , LISTA- , LISTA 01 ...
             continue
         ws = wb[nome]
         if ws.sheet_state != "visible":     # ignora abas ocultas
@@ -325,7 +326,7 @@ def pagina_promocoes(eh_admin: bool = False, marca: str = "natura") -> None:
         with st.expander("⬆️ Atualizar Grade (subir o Excel)", expanded=False):
             st.caption(
                 "Suba o arquivo **.xlsm** da Grade de Ativação. O sistema lê as abas "
-                "**LISTA_ visíveis** e substitui essas promoções (as que não vierem "
+                "**que começam com LISTA** (visíveis) e substitui essas promoções (as que não vierem "
                 "no arquivo ficam como histórico)."
             )
             arq = st.file_uploader("Arquivo da Grade", type=["xlsm", "xlsx"], key="up_grade")
@@ -339,7 +340,7 @@ def pagina_promocoes(eh_admin: bool = False, marca: str = "natura") -> None:
                             st.caption(f"• {tipo}: {n} produtos")
                         st.session_state.pop("_grade_sel", None)
                     else:
-                        st.warning("Nenhuma aba 'LISTA_' visível foi encontrada no arquivo.")
+                        st.warning("Nenhuma aba começando com 'LISTA' (visível) foi encontrada no arquivo.")
                 except Exception as e:
                     _msg = str(e).lower()
                     if "zip" in _msg or "badzip" in _msg:
