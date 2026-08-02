@@ -122,7 +122,10 @@ def ler_grade(file_bytes: bytes, nome_arquivo: str) -> list:
     ciclo, periodo = _ciclo_periodo(nome_arquivo)
     resultado = []
     for nome in wb.sheetnames:
-        if not nome.upper().startswith("LISTA"):   # pega LISTA_ , LISTA- , LISTA 01 ...
+        # Exige um separador ( espaço, _ ou - ) logo após "LISTA" p/ pegar
+        # LISTA_01 / LISTA-01 / LISTA 09 e NÃO pegar "LISTAGEM", "LISTAS" nem uma
+        # aba-índice chamada só "LISTA" (que virariam promoções vazias/quebradas).
+        if not re.match(r"^LISTA[ _-]", nome.upper()):
             continue
         ws = wb[nome]
         if ws.sheet_state != "visible":     # ignora abas ocultas

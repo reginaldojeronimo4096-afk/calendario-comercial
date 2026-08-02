@@ -709,7 +709,10 @@ def dialog_gerenciar_usuarios() -> None:
                     db.atualizar_usuario(uid, {"status": "ativo", "papel": papel_sel})
                     st.rerun(scope="fragment")
             elif status == "ativo":
-                if b1.button("💾 Papel", key=f"ubtn_papel_{uid}", width="stretch",
+                # not sou_eu: o admin NÃO pode trocar o próprio papel (evita se
+                # rebaixar a leitor e se trancar pra fora — um admin rebaixado NÃO
+                # renasce pelos secrets, ao contrário de um admin removido).
+                if not sou_eu and b1.button("💾 Papel", key=f"ubtn_papel_{uid}", width="stretch",
                              help="Salvar o papel escolhido ao lado"):
                     db.atualizar_usuario(uid, {"papel": papel_sel})
                     st.rerun(scope="fragment")

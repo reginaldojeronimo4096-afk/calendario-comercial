@@ -661,6 +661,10 @@ if _recarregar or st.session_state.get("_dados_marca") != EMPRESA:
     st.session_state.ciclos_df = carregar_ciclos()
     st.session_state["_dados_marca"] = EMPRESA
     if _recarregar:
+        # Limpa o estado interno do st.data_editor (key="editor"): ele guarda
+        # edições por POSIÇÃO de linha; se o df mudou de tamanho/ordem (outro
+        # editor salvou), edições pendentes poderiam recair na linha errada.
+        st.session_state.pop("editor", None)
         st.toast("✅ Dados atualizados com a versão mais recente!", icon="🔃")
 
 

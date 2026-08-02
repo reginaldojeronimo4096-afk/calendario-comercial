@@ -69,12 +69,17 @@ def substituir_ciclos(registros: list, marca: str = "natura") -> None:
 # Usuários (login)
 # ---------------------------------------------------------------------------
 def buscar_usuario(usuario: str):
-    """Retorna o dict do usuário (ou None). Busca sem diferenciar maiúsculas."""
+    """Retorna o dict do usuário (ou None). Busca por IGUALDADE EXATA em minúsculas.
+    IMPORTANTE: NÃO usar 'ilike' com o texto cru — os coringas de LIKE ('%' e '_')
+    seriam interpretados, deixando alguém buscar '%@natura.net' e casar com QUALQUER
+    conta (furo no 'esqueci a senha'). Como todos os e-mails são gravados em
+    minúsculas (ver criar_usuario), o '.eq' em .lower() mantém a busca sem diferenciar
+    maiúsculas, mas sem coringa."""
     r = (
         _cliente()
         .table("usuarios")
         .select("*")
-        .ilike("usuario", (usuario or "").strip())
+        .eq("usuario", (usuario or "").strip().lower())
         .limit(1)
         .execute()
     )
@@ -89,7 +94,7 @@ def listar_usuarios() -> list:
 def criar_usuario(usuario, nome, senha_hash, papel="leitor", status="pendente") -> None:
     _cliente().table("usuarios").insert(
         {
-            "usuario": usuario,
+            "usuario": (usuario or "").strip().lower(),  # sempre minúsculas (casa com buscar_usuario)
             "nome": nome,
             "senha_hash": senha_hash,
             "papel": papel,
