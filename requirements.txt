@@ -1,10 +1,12 @@
 # Travado abaixo da 1.59: a 1.59.1 trouxe de volta o "Segmentation fault" no
 # Streamlit Cloud (conflito de libs nativas). A linha 1.58.x roda estável.
 streamlit>=1.56,<1.59
-# Teto <6: a plotly 6.x é uma major nova e o calendário é 100% Plotly — sem o teto,
-# o próximo redeploy (que reinstala tudo pegando a mais nova) poderia puxá-la e
-# arriscar o Segmentation fault de novo. Rever quando 6.x for validada.
-plotly>=5.20,<6
+# Plotly 6.x é a versão que SEMPRE desenhou o calendário certo (validada em produção).
+# NÃO travar em <6: rebaixar p/ a 5.x quebra a espessura/alinhamento das barras do
+# corpo (o `bargap=0` deixa de colar as barras na 5.x). Plotly 6 nunca causou segfault
+# (isso foi pandas 3.0 e streamlit 1.59.1, travados acima). Teto <7 só p/ o próximo
+# major (7.x) não entrar sozinho num reinstall sem a gente validar.
+plotly>=5.20,<7
 # pandas 3.0 (textos via PyArrow por padrão) causou "Segmentation fault" no
 # Streamlit Cloud ao desenhar o calendário (trocar de mês). Travado no 2.x, que é
 # estável e compatível. Rever quando o ecossistema (plotly/streamlit) suportar o 3.x.

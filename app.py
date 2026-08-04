@@ -1214,12 +1214,6 @@ fig.update_traces(
     textposition="auto",        # cabe na barra -> dentro; barra estreita -> ao lado
     insidetextanchor="middle",
     textangle=0,                # nunca gira o texto (sem escrita na vertical)
-    # Espessura FIXA da barra = 1 sub-linha inteira. Sem isto dependíamos do
-    # bargap=0 p/ as barras encostarem; mas o cálculo automático de largura de barra
-    # mudou entre versões do Plotly (reinstalação do Cloud) e as barras ficaram
-    # fininhas com vãos. width=1.0 (em unidades do eixo y, 1 lane) força a barra a
-    # ocupar a sub-linha inteira independentemente da versão.
-    width=1.0,
     cliponaxis=False,           # deixa o texto que sai da barra aparecer inteiro
     # Quando o nome NÃO cabe e vaza pra FORA da barra (barra curta), o texto sai
     # em cinza escuro — legível no fundo branco (a cor de dentro é clara p/ contrastar
@@ -1333,7 +1327,6 @@ fig.update_layout(
     height=area_plot + 12,
     margin=dict(l=120, r=10, t=2, b=10),  # MESMO l/r do cabeçalho (colunas alinhadas)
     bargap=0,  # barras encostadas: sub-linhas da mesma faixa viram um bloco único
-    barmode="overlay",  # cada ação (trace) ocupa a lane INTEIRA; não divide a altura entre traços
     dragmode=False,  # sem arrastar/zoom: o cursor não vira cruz no calendário
     paper_bgcolor="#FFFFFF",
     plot_bgcolor="#FFFFFF",
